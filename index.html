@@ -22,7 +22,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Disponibiliza as funções do Firebase globalmente para o script do jogo
         window.db = db;
         window.collection = collection;
         window.doc = doc;
@@ -66,10 +65,22 @@
         .auth-box button { width: 100%; padding: 15px; margin-top: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); color: #fff; font-weight: 900; font-size: 16px; cursor: pointer; text-transform: uppercase;}
         .auth-toggle { margin-top: 20px; color: #ccc; cursor: pointer; font-size: 14px; font-weight: bold;}
 
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(0,0,0,0.5); border-radius: 12px; overflow: hidden; display: block; overflow-x: auto; white-space: nowrap;}
-        .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; }
-        .admin-table th { background: rgba(255,255,255,0.1); color: var(--neon-gold); }
-        .btn-delete { background: var(--neon-pink); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;}
+        /* ESTILO DO PAINEL DE ADM MELHORADO */
+        .admin-container { max-width: 1000px; margin: 0 auto; background: rgba(10, 5, 20, 0.95); padding: 30px; border-radius: 24px; border: 2px solid var(--neon-pink); box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
+        .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .stat-card h4 { margin: 0; color: var(--text-muted); font-size: 14px; }
+        .stat-card p { margin: 8px 0 0 0; font-size: 22px; font-weight: 900; color: var(--neon-gold); }
+        
+        .admin-table-wrapper { overflow-x: auto; max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .admin-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        .admin-table th, .admin-table td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; }
+        .admin-table th { background: rgba(0, 229, 255, 0.1); color: var(--neon-blue); position: sticky; top: 0; backdrop-filter: blur(5px); }
+        
+        .btn-adm-action { padding: 6px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-right: 5px; }
+        .btn-add-saldo { background: var(--neon-green); color: #000; }
+        .btn-sub-saldo { background: var(--neon-gold); color: #000; }
+        .btn-delete { background: var(--neon-pink); color: #fff; }
 
         .sidebar { width: 240px; background: linear-gradient(180deg, var(--bg-sidebar), #030108); display: flex; flex-direction: column; border-right: 2px solid rgba(0, 229, 255, 0.3); z-index: 100; box-shadow: 5px 0 30px rgba(0,0,0,0.8); transition: left 0.3s ease;}
         .logo-area { padding: 25px 20px; font-size: 24px; font-weight: 900; color: var(--neon-blue); border-bottom: 1px solid rgba(255,255,255,0.05); text-shadow: 0 0 15px var(--neon-blue);}
@@ -240,16 +251,42 @@
         </div>
     </div>
 
-    <!-- TELA DE ADMINISTRAÇÃO -->
+    <!-- TELA DE ADMINISTRAÇÃO AVANÇADA -->
     <div id="adminLayout" class="screen" style="background: var(--bg-sidebar);">
-        <div class="game-container" style="max-width: 900px;">
-            <h2 style="color:var(--neon-pink);">PAINEL DE CONTROLE (ADMIN - CLOUD)</h2>
-            <button class="btn-play" style="width: auto; padding: 10px 20px; font-size: 14px; margin-bottom: 20px;" onclick="logout()">Sair do Painel</button>
+        <div class="admin-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                <h2 style="color:var(--neon-pink); margin: 0;">🛡️ PAINEL ADMINISTRATIVO MASTER</h2>
+                <button class="btn-play" style="width: auto; padding: 10px 20px; font-size: 14px;" onclick="logout()">Sair do Painel</button>
+            </div>
             
-            <table class="admin-table" id="adminTable">
-                <thead><tr><th>Usuário</th><th>Senha</th><th>Saldo (R$)</th><th>Ação</th></tr></thead>
-                <tbody id="adminTableBody"></tbody>
-            </table>
+            <!-- ESTATÍSTICAS DA CASA -->
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <h4>Total de Jogadores</h4>
+                    <p id="admTotalUsers">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Banca Total na Nuvem</h4>
+                    <p id="admTotalBank">R$ 0.00</p>
+                </div>
+            </div>
+
+            <!-- TABELA DE GERENCIAMENTO -->
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Senha</th>
+                            <th>Saldo Atual</th>
+                            <th>Ações Administrativas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody">
+                        <tr><td colspan="4">Carregando dados da nuvem...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -471,13 +508,11 @@
     </div>
 
 <script>
-    // === MENU MOBILE TOGGLE ===
     function toggleMobileMenu() {
         document.getElementById('sidebarMenu').classList.toggle('show');
         document.getElementById('mobileOverlay').classList.toggle('active');
     }
 
-    // === SISTEMA DE LOGIN COM FIRESTORE (CLOUD) ===
     let currentUser = null;
     let isLoginMode = true;
     let saldoAtual = 0;
@@ -495,7 +530,6 @@
         
         if(!user || !pass) return alert("Preencha usuário e senha!");
 
-        // ADMIN LOGIN
         if(user === 'adm' && pass === '100308') {
             document.getElementById('authLayout').style.display = 'none';
             document.getElementById('adminLayout').style.display = 'block';
@@ -504,7 +538,7 @@
         }
 
         if(!window.firebaseReady) {
-            return alert("Conectando ao Banco de Dados do Google... Aguarde 2 segundos e tente novamente.");
+            return alert("Conectando ao Banco de Dados do Google... Aguarde um instante e tente novamente.");
         }
 
         const userDocRef = window.doc(window.db, "users", user);
@@ -527,7 +561,7 @@
             }
         } catch (e) {
             console.error(e);
-            alert("Erro ao conectar com o banco de dados. Verifique sua conexão.");
+            alert("Erro ao conectar com o banco de dados. Verifique suas regras no Firestore.");
         }
     }
 
@@ -550,7 +584,7 @@
         isLoginMode = true; toggleAuthMode(); toggleAuthMode(); 
     }
 
-    // === ADMIN CLOUD ===
+    // === ADMIN MASTER CLOUD ===
     async function renderAdminTable() {
         const tbody = document.getElementById('adminTableBody'); 
         tbody.innerHTML = "<tr><td colspan='4'>Carregando dados da nuvem...</td></tr>";
@@ -558,20 +592,60 @@
         try {
             const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
             tbody.innerHTML = '';
+            
+            let totalUsers = 0;
+            let totalBank = 0;
+
             querySnapshot.forEach((docSnap) => {
                 let u = docSnap.id;
                 let data = docSnap.data();
-                tbody.innerHTML += `<tr><td>${u}</td><td>${data.pass}</td><td>R$ ${data.saldo.toFixed(2)}</td><td><button class="btn-delete" onclick="deletarUsuario('${u}')">Remover</button></td></tr>`;
+                totalUsers++;
+                totalBank += data.saldo;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight: bold; color: var(--neon-blue);">${u}</td>
+                        <td>${data.pass}</td>
+                        <td style="color: var(--neon-green); font-weight: bold;">R$ ${data.saldo.toFixed(2)}</td>
+                        <td>
+                            <button class="btn-adm-action btn-add-saldo" onclick="admModificarSaldo('${u}', 50)">+R$50</button>
+                            <button class="btn-adm-action btn-sub-saldo" onclick="admModificarSaldo('${u}', -50)">-R$50</button>
+                            <button class="btn-adm-action btn-delete" onclick="deletarUsuario('${u}')">Excluir</button>
+                        </td>
+                    </tr>`;
             });
-            if(querySnapshot.empty) tbody.innerHTML = "<tr><td colspan='4'>Nenhum usuário cadastrado na nuvem.</td></tr>";
+
+            document.getElementById('admTotalUsers').innerText = totalUsers;
+            document.getElementById('admTotalBank').innerText = `R$ ${totalBank.toFixed(2)}`;
+
+            if(querySnapshot.empty) {
+                tbody.innerHTML = "<tr><td colspan='4'>Nenhum usuário cadastrado na nuvem.</td></tr>";
+                document.getElementById('admTotalUsers').innerText = 0;
+                document.getElementById('admTotalBank').innerText = "R$ 0.00";
+            }
         } catch(e) {
             console.error(e);
             tbody.innerHTML = "<tr><td colspan='4'>Erro ao carregar usuários. Verifique as regras do Firestore.</td></tr>";
         }
     }
 
+    async function admModificarSaldo(username, qtd) {
+        try {
+            const userRef = window.doc(window.db, "users", username);
+            const docSnap = await window.getDoc(userRef);
+            if(docSnap.exists()) {
+                let novoSaldo = Math.max(0, docSnap.data().saldo + qtd);
+                await window.updateDoc(userRef, { saldo: novoSaldo });
+                renderAdminTable();
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Erro ao alterar saldo.");
+        }
+    }
+
     async function deletarUsuario(u) {
-        if(confirm("Deletar " + u + " da nuvem?")) {
+        if(confirm("Tem certeza que deseja excluir a conta de " + u + " da nuvem?")) {
             await window.deleteDoc(window.doc(window.db, "users", u));
             renderAdminTable();
         }
@@ -857,7 +931,7 @@
         await delay(400);
         let venc = tJog > tBan ? "jogador" : (tBan > tJog ? "banca" : "empate");
         if (document.getElementById('escolhaBac').value === venc) { let m = venc === "empate" ? 8 : 2; document.getElementById('resultadoBac').innerHTML = `<span class='pop-in win-text'>GANHOU R$ ${(aposta*m).toFixed(2)}</span>`; atualizarSaldoGlobal(aposta*m); } 
-        else document.getElementById('resultadoBac').innerHTML = `<span class='pop-in lose-text'>PERDEU!</span>`;
+        else document.getElementById('resultadoBac').innerHTML = `<span class='lose-text'>PERDEU!</span>`;
         document.getElementById('btnBacDeal').disabled = false;
     }
 
@@ -872,7 +946,7 @@
         document.getElementById('coin').style.transform = `rotateY(${rotacaoCC}deg)`;
         setTimeout(() => {
             if (document.getElementById('escolhaCC').value === sorteio) { document.getElementById('resultadoCC').innerHTML = `<span class='pop-in win-text'>VENCEU! +R$ ${(aposta*2).toFixed(2)}</span>`; atualizarSaldoGlobal(aposta*2); } 
-            else { document.getElementById('resultadoCC').innerHTML = `<span class='pop-in lose-text'>PERDEU.</span>`; }
+            else { document.getElementById('resultadoCC').innerHTML = `<span class='lose-text'>PERDEU.</span>`; }
             document.getElementById('btnCC').disabled = false; document.getElementById('coinWrapper').classList.add('idle');
         }, 3000);
     }
