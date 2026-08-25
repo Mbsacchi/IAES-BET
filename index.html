@@ -55,7 +55,6 @@
         .app-layout.active { display: flex; }
         .screen { display: none; padding: 20px; min-height: 100%; box-sizing: border-box; overflow-y: auto; overflow-x: hidden;}
         .screen.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
         
         .auth-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: radial-gradient(circle at center, #1c0a3f, var(--bg-dark)); position: relative; overflow: hidden;}
         .auth-wrapper::before { content:''; position:absolute; width:200%; height:200%; background: repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(0,229,255,0.03) 15deg 30deg); animation: spinBurst 60s linear infinite; }
@@ -65,23 +64,47 @@
         .auth-box button { width: 100%; padding: 15px; margin-top: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); color: #fff; font-weight: 900; font-size: 16px; cursor: pointer; text-transform: uppercase;}
         .auth-toggle { margin-top: 20px; color: #ccc; cursor: pointer; font-size: 14px; font-weight: bold;}
 
-        /* ESTILO DO PAINEL DE ADM MELHORADO */
-        .admin-container { max-width: 1000px; margin: 0 auto; background: rgba(10, 5, 20, 0.95); padding: 30px; border-radius: 24px; border: 2px solid var(--neon-pink); box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
-        .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        .stat-card h4 { margin: 0; color: var(--text-muted); font-size: 14px; }
-        .stat-card p { margin: 8px 0 0 0; font-size: 22px; font-weight: 900; color: var(--neon-gold); }
+        /* ==========================================
+           NOVO PAINEL DE ADM - DASHBOARD TELA CHEIA 
+           ========================================== */
+        #adminLayout { background: var(--bg-dark); padding: 0; display: none; flex-direction: column; height: 100vh; }
+        #adminLayout.active { display: flex; }
         
-        .admin-table-wrapper { overflow-x: auto; max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .admin-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        .admin-table th, .admin-table td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; }
-        .admin-table th { background: rgba(0, 229, 255, 0.1); color: var(--neon-blue); position: sticky; top: 0; backdrop-filter: blur(5px); }
+        .admin-headerbar { background: rgba(15, 6, 36, 0.95); backdrop-filter: blur(10px); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--neon-pink); z-index: 10; box-shadow: 0 5px 20px rgba(255, 42, 95, 0.2);}
+        .admin-headerbar h2 { margin: 0; color: #fff; font-size: 24px; letter-spacing: 1px; text-shadow: 0 0 10px var(--neon-pink);}
         
-        .btn-adm-action { padding: 6px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-right: 5px; }
-        .btn-add-saldo { background: var(--neon-green); color: #000; }
-        .btn-sub-saldo { background: var(--neon-gold); color: #000; }
-        .btn-delete { background: var(--neon-pink); color: #fff; }
+        .admin-content-area { padding: 30px; flex: 1; overflow-y: auto; }
+        
+        .admin-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: rgba(255,255,255,0.03); padding: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--neon-blue); }
+        .stat-card:nth-child(2)::before { background: var(--neon-gold); }
+        .stat-card:nth-child(3)::before { background: var(--neon-green); }
+        .stat-card:nth-child(4)::before { background: var(--neon-purple); }
+        .stat-card h4 { margin: 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;}
+        .stat-card p { margin: 10px 0 0 0; font-size: 28px; font-weight: 900; color: #fff; }
+        
+        .admin-toolbar { display: flex; gap: 15px; margin-bottom: 20px; align-items: center;}
+        .admin-search { flex: 1; padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(0, 229, 255, 0.3); background: rgba(0,0,0,0.5); color: #fff; font-size: 16px; transition: 0.3s;}
+        .admin-search:focus { outline: none; border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);}
+        
+        .admin-table-wrapper { background: rgba(10,5,20,0.8); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); padding: 20px; overflow-x: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.8);}
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 800px;}
+        .admin-table th { background: rgba(0,0,0,0.5); padding: 15px; color: var(--text-muted); text-transform: uppercase; font-size: 12px; border-bottom: 2px solid rgba(255,255,255,0.1); text-align: left;}
+        .admin-table td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; font-size: 16px;}
+        .admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+        
+        .custom-val-input { width: 100px; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.6); color: #fff; font-weight: bold; margin-right: 10px; font-size: 14px;}
+        .btn-adm { padding: 10px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; color: #000; font-size: 14px;}
+        .btn-adm:hover { transform: translateY(-2px); filter: brightness(1.2); }
+        .btn-add { background: var(--neon-green); box-shadow: 0 0 10px rgba(0,255,136,0.3); margin-right: 5px;}
+        .btn-sub { background: var(--neon-gold); box-shadow: 0 0 10px rgba(255,204,0,0.3); margin-right: 15px;}
+        .btn-del { background: var(--neon-pink); color: #fff; box-shadow: 0 0 10px rgba(255,42,95,0.3);}
+        .btn-refresh { background: var(--neon-blue); color: #000; padding: 15px 25px;}
 
+        /* ==========================================
+           RESTO DO CÓDIGO (CASSINO)
+           ========================================== */
         .sidebar { width: 240px; background: linear-gradient(180deg, var(--bg-sidebar), #030108); display: flex; flex-direction: column; border-right: 2px solid rgba(0, 229, 255, 0.3); z-index: 100; box-shadow: 5px 0 30px rgba(0,0,0,0.8); transition: left 0.3s ease;}
         .logo-area { padding: 25px 20px; font-size: 24px; font-weight: 900; color: var(--neon-blue); border-bottom: 1px solid rgba(255,255,255,0.05); text-shadow: 0 0 15px var(--neon-blue);}
         .menu-items { padding: 15px 0; list-style: none; margin: 0; overflow-y:auto;}
@@ -229,6 +252,10 @@
             .coin-wrapper { height: 180px; }
             .coin-container { width: 130px; height: 130px; }
             .face { font-size: 60px; }
+
+            /* Mobile Admin adjustments */
+            .admin-stats-row { grid-template-columns: 1fr; }
+            .admin-headerbar { flex-direction: column; gap: 15px; text-align: center;}
         }
     </style>
 </head>
@@ -251,27 +278,43 @@
         </div>
     </div>
 
-    <!-- TELA DE ADMINISTRAÇÃO AVANÇADA -->
-    <div id="adminLayout" class="screen" style="background: var(--bg-sidebar);">
-        <div class="admin-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
-                <h2 style="color:var(--neon-pink); margin: 0;">🛡️ PAINEL ADMINISTRATIVO MASTER</h2>
-                <button class="btn-play" style="width: auto; padding: 10px 20px; font-size: 14px;" onclick="logout()">Sair do Painel</button>
+    <!-- PAINEL DE ADMINISTRAÇÃO TELA CHEIA (NOVO) -->
+    <div id="adminLayout">
+        <div class="admin-headerbar">
+            <h2>🛡️ PAINEL MASTER CLOUD</h2>
+            <div>
+                <button class="btn-adm btn-refresh" onclick="renderAdminTable()">🔄 Atualizar Dados</button>
+                <button class="btn-adm btn-del" onclick="logout()">🚪 Sair do Painel</button>
             </div>
-            
-            <!-- ESTATÍSTICAS DA CASA -->
-            <div class="admin-stats">
+        </div>
+        
+        <div class="admin-content-area">
+            <!-- Estatísticas -->
+            <div class="admin-stats-row">
                 <div class="stat-card">
                     <h4>Total de Jogadores</h4>
                     <p id="admTotalUsers">0</p>
                 </div>
                 <div class="stat-card">
-                    <h4>Banca Total na Nuvem</h4>
-                    <p id="admTotalBank">R$ 0.00</p>
+                    <h4>Banca Total (Nuvem)</h4>
+                    <p id="admTotalBank" style="color:var(--neon-gold);">R$ 0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Maior Saldo</h4>
+                    <p id="admRichest" style="color:var(--neon-green); font-size: 20px;">-</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Média de Saldo</h4>
+                    <p id="admAvg" style="color:var(--neon-purple);">R$ 0.00</p>
                 </div>
             </div>
 
-            <!-- TABELA DE GERENCIAMENTO -->
+            <!-- Pesquisa -->
+            <div class="admin-toolbar">
+                <input type="text" id="adminSearch" class="admin-search" placeholder="🔍 Pesquisar por usuário..." onkeyup="filtrarUsuarios()">
+            </div>
+
+            <!-- Tabela -->
             <div class="admin-table-wrapper">
                 <table class="admin-table">
                     <thead>
@@ -279,18 +322,19 @@
                             <th>Usuário</th>
                             <th>Senha</th>
                             <th>Saldo Atual</th>
-                            <th>Ações Administrativas</th>
+                            <th>Modificar Saldo (Personalizado)</th>
+                            <th>Gerenciar</th>
                         </tr>
                     </thead>
                     <tbody id="adminTableBody">
-                        <tr><td colspan="4">Carregando dados da nuvem...</td></tr>
+                        <tr><td colspan='5'>Carregando dados...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- APLICATIVO PRINCIPAL -->
+    <!-- APLICATIVO PRINCIPAL (CASSINO) -->
     <div id="appLayout" class="app-layout">
         <aside class="sidebar" id="sidebarMenu">
             <div class="logo-area">💎 IAES BET</div>
@@ -532,7 +576,7 @@
 
         if(user === 'adm' && pass === '100308') {
             document.getElementById('authLayout').style.display = 'none';
-            document.getElementById('adminLayout').style.display = 'block';
+            document.getElementById('adminLayout').classList.add('active');
             renderAdminTable();
             return;
         }
@@ -577,17 +621,17 @@
     function logout() {
         currentUser = null; 
         document.getElementById('appLayout').classList.remove('active');
-        document.getElementById('adminLayout').style.display = 'none'; 
+        document.getElementById('adminLayout').classList.remove('active'); 
         document.getElementById('authLayout').style.display = 'flex';
         document.getElementById('username').value = ''; 
         document.getElementById('password').value = '';
         isLoginMode = true; toggleAuthMode(); toggleAuthMode(); 
     }
 
-    // === ADMIN MASTER CLOUD ===
+    // === NOVO PAINEL ADMIN DASHBOARD ===
     async function renderAdminTable() {
         const tbody = document.getElementById('adminTableBody'); 
-        tbody.innerHTML = "<tr><td colspan='4'>Carregando dados da nuvem...</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='5'>Carregando dados da nuvem...</td></tr>";
         
         try {
             const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
@@ -595,38 +639,71 @@
             
             let totalUsers = 0;
             let totalBank = 0;
+            let highestBalance = 0;
+            let richestUser = "-";
 
             querySnapshot.forEach((docSnap) => {
                 let u = docSnap.id;
                 let data = docSnap.data();
+                
                 totalUsers++;
                 totalBank += data.saldo;
+                
+                if (data.saldo > highestBalance) {
+                    highestBalance = data.saldo;
+                    richestUser = u;
+                }
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="font-weight: bold; color: var(--neon-blue);">${u}</td>
-                        <td>${data.pass}</td>
-                        <td style="color: var(--neon-green); font-weight: bold;">R$ ${data.saldo.toFixed(2)}</td>
-                        <td>
-                            <button class="btn-adm-action btn-add-saldo" onclick="admModificarSaldo('${u}', 50)">+R$50</button>
-                            <button class="btn-adm-action btn-sub-saldo" onclick="admModificarSaldo('${u}', -50)">-R$50</button>
-                            <button class="btn-adm-action btn-delete" onclick="deletarUsuario('${u}')">Excluir</button>
-                        </td>
-                    </tr>`;
+                let tr = document.createElement('tr');
+                tr.className = 'admin-user-row';
+                tr.innerHTML = `
+                    <td style="font-weight: bold; color: var(--neon-blue);">${u}</td>
+                    <td>${data.pass}</td>
+                    <td style="color: var(--neon-green); font-weight: bold; font-size: 18px;">R$ ${data.saldo.toFixed(2)}</td>
+                    <td>
+                        <div style="display:flex; align-items:center;">
+                            <input type="number" id="customVal_${u}" class="custom-val-input" placeholder="Valor" value="50">
+                            <button class="btn-adm btn-add" onclick="admModificarCustom('${u}', true)">➕ Dar</button>
+                            <button class="btn-adm btn-sub" onclick="admModificarCustom('${u}', false)">➖ Tirar</button>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn-adm btn-del" onclick="deletarUsuario('${u}')">🗑️ Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
 
             document.getElementById('admTotalUsers').innerText = totalUsers;
             document.getElementById('admTotalBank').innerText = `R$ ${totalBank.toFixed(2)}`;
+            document.getElementById('admRichest').innerText = totalUsers > 0 ? `${richestUser} (R$ ${highestBalance.toFixed(2)})` : "-";
+            document.getElementById('admAvg').innerText = `R$ ${(totalUsers > 0 ? totalBank/totalUsers : 0).toFixed(2)}`;
 
             if(querySnapshot.empty) {
-                tbody.innerHTML = "<tr><td colspan='4'>Nenhum usuário cadastrado na nuvem.</td></tr>";
-                document.getElementById('admTotalUsers').innerText = 0;
-                document.getElementById('admTotalBank').innerText = "R$ 0.00";
+                tbody.innerHTML = "<tr><td colspan='5'>Nenhum usuário cadastrado na nuvem.</td></tr>";
             }
         } catch(e) {
             console.error(e);
-            tbody.innerHTML = "<tr><td colspan='4'>Erro ao carregar usuários. Verifique as regras do Firestore.</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='5'>Erro ao carregar usuários da nuvem.</td></tr>";
         }
+    }
+
+    function filtrarUsuarios() {
+        let term = document.getElementById('adminSearch').value.toLowerCase();
+        let rows = document.querySelectorAll('.admin-user-row');
+        rows.forEach(row => {
+            let user = row.cells[0].innerText.toLowerCase();
+            row.style.display = user.includes(term) ? '' : 'none';
+        });
+    }
+
+    async function admModificarCustom(u, isAdd) {
+        let valInput = document.getElementById(`customVal_${u}`).value;
+        let val = parseFloat(valInput);
+        if(isNaN(val) || val <= 0) return alert("Por favor, digite um valor válido maior que zero!");
+        
+        if(!isAdd) val = -val;
+        admModificarSaldo(u, val);
     }
 
     async function admModificarSaldo(username, qtd) {
@@ -636,7 +713,7 @@
             if(docSnap.exists()) {
                 let novoSaldo = Math.max(0, docSnap.data().saldo + qtd);
                 await window.updateDoc(userRef, { saldo: novoSaldo });
-                renderAdminTable();
+                renderAdminTable(); // Atualiza a tabela pra mostrar o novo saldo
             }
         } catch(e) {
             console.error(e);
@@ -645,7 +722,7 @@
     }
 
     async function deletarUsuario(u) {
-        if(confirm("Tem certeza que deseja excluir a conta de " + u + " da nuvem?")) {
+        if(confirm("Tem certeza que deseja BANIR e excluir a conta de " + u + " permanentemente?")) {
             await window.deleteDoc(window.doc(window.db, "users", u));
             renderAdminTable();
         }
