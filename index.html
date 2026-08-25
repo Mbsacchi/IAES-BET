@@ -4,6 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IAES BET - Cassino VIP Cloud</title>
+    
+    <!-- SDKs do Firebase (Modular CDN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwOzGdFytamzvfUX0DNbiNF5SWfavpzcE",
+            authDomain: "iaes-bet.firebaseapp.com",
+            projectId: "iaes-bet",
+            storageBucket: "iaes-bet.firebasestorage.app",
+            messagingSenderId: "734792847462",
+            appId: "1:734792847462:web:eaa9568fbe586220ca9da7"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Disponibiliza as funções do Firebase globalmente para o script do jogo
+        window.db = db;
+        window.collection = collection;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.getDocs = getDocs;
+        window.deleteDoc = deleteDoc;
+        window.updateDoc = updateDoc;
+        window.firebaseReady = true;
+    </script>
+
     <style>
         :root {
             --bg-dark: #07030f; --bg-sidebar: #0f0624;
@@ -29,6 +59,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
         
         .auth-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: radial-gradient(circle at center, #1c0a3f, var(--bg-dark)); position: relative; overflow: hidden;}
+        .auth-wrapper::before { content:''; position:absolute; width:200%; height:200%; background: repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(0,229,255,0.03) 15deg 30deg); animation: spinBurst 60s linear infinite; }
         .auth-box { background: rgba(10, 5, 25, 0.65); backdrop-filter: blur(20px); padding: 40px; border-radius: 24px; border: 1px solid rgba(0, 229, 255, 0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 90%; max-width: 380px; text-align: center; position: relative; z-index: 2; box-sizing: border-box;}
         .auth-box h1 { color: #fff; margin-top: 0; font-size: 36px; text-shadow: 0 0 15px var(--neon-blue); letter-spacing: 2px;}
         .auth-box input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.6); color: var(--neon-blue); font-size: 16px; font-weight: bold; box-sizing: border-box;}
@@ -212,7 +243,7 @@
     <!-- TELA DE ADMINISTRAÇÃO -->
     <div id="adminLayout" class="screen" style="background: var(--bg-sidebar);">
         <div class="game-container" style="max-width: 900px;">
-            <h2 style="color:var(--neon-pink);">PAINEL DE CONTROLE (ADMIN)</h2>
+            <h2 style="color:var(--neon-pink);">PAINEL DE CONTROLE (ADMIN - CLOUD)</h2>
             <button class="btn-play" style="width: auto; padding: 10px 20px; font-size: 14px; margin-bottom: 20px;" onclick="logout()">Sair do Painel</button>
             
             <table class="admin-table" id="adminTable">
@@ -446,8 +477,7 @@
         document.getElementById('mobileOverlay').classList.toggle('active');
     }
 
-    // === SISTEMA DE LOGIN E BANCO DE DADOS LOCAL ===
-    let usersDB = JSON.parse(localStorage.getItem('iaes_users')) || {};
+    // === SISTEMA DE LOGIN COM FIRESTORE (CLOUD) ===
     let currentUser = null;
     let isLoginMode = true;
     let saldoAtual = 0;
@@ -459,12 +489,13 @@
         document.getElementById('authToggle').innerText = isLoginMode ? "Não tem conta? Criar agora" : "Já tem conta? Faça login";
     }
 
-    function handleAuth() {
+    async function handleAuth() {
         const user = document.getElementById('username').value.trim();
         const pass = document.getElementById('password').value.trim();
         
         if(!user || !pass) return alert("Preencha usuário e senha!");
 
+        // ADMIN LOGIN
         if(user === 'adm' && pass === '100308') {
             document.getElementById('authLayout').style.display = 'none';
             document.getElementById('adminLayout').style.display = 'block';
@@ -472,22 +503,37 @@
             return;
         }
 
-        if(isLoginMode) {
-            if(!usersDB[user]) return alert("Usuário não encontrado!");
-            if(usersDB[user].pass !== pass) return alert("Senha incorreta!");
-            iniciarSessao(user);
-        } else {
-            if(usersDB[user]) return alert("Usuário já existe!");
-            if(user === 'adm') return alert("Nome reservado!");
-            usersDB[user] = { pass: pass, saldo: 1000.00 }; 
-            salvarDB();
-            alert("Conta criada com sucesso! Faça login.");
-            toggleAuthMode();
+        if(!window.firebaseReady) {
+            return alert("Conectando ao Banco de Dados do Google... Aguarde 2 segundos e tente novamente.");
+        }
+
+        const userDocRef = window.doc(window.db, "users", user);
+
+        try {
+            if(isLoginMode) {
+                const docSnap = await window.getDoc(userDocRef);
+                if(!docSnap.exists()) return alert("Usuário não encontrado!");
+                const userData = docSnap.data();
+                if(userData.pass !== pass) return alert("Senha incorreta!");
+                iniciarSessao(user, userData.saldo);
+            } else {
+                const docSnap = await window.getDoc(userDocRef);
+                if(docSnap.exists()) return alert("Usuário já existe!");
+                if(user === 'adm') return alert("Nome reservado!");
+                
+                await window.setDoc(userDocRef, { pass: pass, saldo: 1000.00 });
+                alert("Conta criada com sucesso! Faça login.");
+                toggleAuthMode();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao conectar com o banco de dados. Verifique sua conexão.");
         }
     }
 
-    function iniciarSessao(username) {
-        currentUser = username; saldoAtual = usersDB[currentUser].saldo;
+    function iniciarSessao(username, saldo) {
+        currentUser = username; 
+        saldoAtual = saldo;
         document.getElementById('authLayout').style.display = 'none';
         document.getElementById('appLayout').classList.add('active');
         document.getElementById('loggedUserDisplay').innerText = "Usuário: " + username;
@@ -495,37 +541,66 @@
     }
 
     function logout() {
-        currentUser = null; document.getElementById('appLayout').classList.remove('active');
-        document.getElementById('adminLayout').style.display = 'none'; document.getElementById('authLayout').style.display = 'flex';
-        document.getElementById('username').value = ''; document.getElementById('password').value = '';
+        currentUser = null; 
+        document.getElementById('appLayout').classList.remove('active');
+        document.getElementById('adminLayout').style.display = 'none'; 
+        document.getElementById('authLayout').style.display = 'flex';
+        document.getElementById('username').value = ''; 
+        document.getElementById('password').value = '';
         isLoginMode = true; toggleAuthMode(); toggleAuthMode(); 
     }
 
-    function salvarDB() { localStorage.setItem('iaes_users', JSON.stringify(usersDB)); }
-
-    // === ADMIN ===
-    function renderAdminTable() {
-        const tbody = document.getElementById('adminTableBody'); tbody.innerHTML = '';
-        for(let u in usersDB) {
-            tbody.innerHTML += `<tr><td>${u}</td><td>${usersDB[u].pass}</td><td>R$ ${usersDB[u].saldo.toFixed(2)}</td><td><button class="btn-delete" onclick="deletarUsuario('${u}')">Remover</button></td></tr>`;
+    // === ADMIN CLOUD ===
+    async function renderAdminTable() {
+        const tbody = document.getElementById('adminTableBody'); 
+        tbody.innerHTML = "<tr><td colspan='4'>Carregando dados da nuvem...</td></tr>";
+        
+        try {
+            const querySnapshot = await window.getDocs(window.collection(window.db, "users"));
+            tbody.innerHTML = '';
+            querySnapshot.forEach((docSnap) => {
+                let u = docSnap.id;
+                let data = docSnap.data();
+                tbody.innerHTML += `<tr><td>${u}</td><td>${data.pass}</td><td>R$ ${data.saldo.toFixed(2)}</td><td><button class="btn-delete" onclick="deletarUsuario('${u}')">Remover</button></td></tr>`;
+            });
+            if(querySnapshot.empty) tbody.innerHTML = "<tr><td colspan='4'>Nenhum usuário cadastrado na nuvem.</td></tr>";
+        } catch(e) {
+            console.error(e);
+            tbody.innerHTML = "<tr><td colspan='4'>Erro ao carregar usuários. Verifique as regras do Firestore.</td></tr>";
         }
-        if(Object.keys(usersDB).length === 0) tbody.innerHTML = "<tr><td colspan='4'>Nenhum usuário cadastrado.</td></tr>";
     }
-    function deletarUsuario(u) { if(confirm("Deletar " + u + "?")) { delete usersDB[u]; salvarDB(); renderAdminTable(); } }
 
-    // === SISTEMA GLOBAL & DOPAMINA ===
+    async function deletarUsuario(u) {
+        if(confirm("Deletar " + u + " da nuvem?")) {
+            await window.deleteDoc(window.doc(window.db, "users", u));
+            renderAdminTable();
+        }
+    }
+
+    // === SISTEMA GLOBAL & DOPAMINA (CLOUD SYNC) ===
+    async function atualizarSaldoCloud(novoSaldo) {
+        if(!currentUser) return;
+        saldoAtual = novoSaldo;
+        document.querySelectorAll('.saldo-display').forEach(d => d.innerText = saldoAtual.toFixed(2));
+        try {
+            await window.updateDoc(window.doc(window.db, "users", currentUser), { saldo: saldoAtual });
+        } catch(e) {
+            console.error("Erro ao salvar saldo na nuvem:", e);
+        }
+    }
+
     function animarSaldo(valorFinal) {
         if(!currentUser) return;
         const displays = document.querySelectorAll('.saldo-display');
         const frames = 20; const incremento = (valorFinal - saldoAtual) / frames;
         let frameAtual = 0;
+        let valorIntermediario = saldoAtual;
         const timer = setInterval(() => {
-            frameAtual++; saldoAtual += incremento;
-            displays.forEach(d => d.innerText = saldoAtual.toFixed(2));
+            frameAtual++; valorIntermediario += incremento;
+            displays.forEach(d => d.innerText = valorIntermediario.toFixed(2));
             if (frameAtual >= frames) { 
-                clearInterval(timer); saldoAtual = valorFinal; 
-                displays.forEach(d => d.innerText = saldoAtual.toFixed(2)); 
-                usersDB[currentUser].saldo = saldoAtual; salvarDB(); 
+                clearInterval(timer); 
+                atualizarSaldoCloud(valorFinal);
             }
         }, 30);
     }
@@ -542,7 +617,10 @@
         setTimeout(() => { container.innerHTML = ''; }, 3000);
     }
 
-    function atualizarSaldoGlobal(ganho = 0) { animarSaldo(saldoAtual + ganho); if (ganho > 0) dispararConfetes(); }
+    function atualizarSaldoGlobal(ganho = 0) { 
+        animarSaldo(saldoAtual + ganho); 
+        if (ganho > 0) dispararConfetes(); 
+    }
 
     function mudarTela(telaId, navId) {
         document.querySelectorAll('.screen').forEach(t => t.classList.remove('active'));
