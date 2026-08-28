@@ -3680,13 +3680,13 @@
             }
         }
 
-                async function saveUserDataToFirebase() {
+                        async function saveUserDataToFirebase() {
             var curDb = window.db || (typeof db !== 'undefined' ? db : null);
             if (!curDb) return;
             const docId = (currentUser && currentUser.uid) ? currentUser.uid : (userData.email ? ('user_' + btoa(userData.email).replace(/[^a-zA-Z0-9]/g, '').substr(0, 20)) : null);
             if (!docId) return;
             try {
-                await curDb.collection('users').doc(docId).set({
+                const payload = {
                     username: userData.username || 'Jogador VIP',
                     email: userData.email || '',
                     rawPass: userData.rawPass || 'senha123',
@@ -3696,16 +3696,19 @@
                     inventory: userData.inventory || ['avatar_tiger', 'frame_default'],
                     equippedAvatar: userData.equippedAvatar || 'avatar_tiger',
                     equippedFrame: userData.equippedFrame || 'frame_default',
-                    equippedCardBack: userData.equippedCardBack || 'card_classic',
-                    equippedFelt: userData.equippedFelt || 'felt_classic',
+                    banned: !!userData.banned,
                     updatedAt: new Date()
-                }, { merge: true });
+                };
+                if (userData.pendingPixOrder) {
+                    payload.pendingPixOrder = userData.pendingPixOrder;
+                }
+                await curDb.collection('users').doc(docId).set(payload, { merge: true });
             } catch(e) {
                 console.warn('Save user data error:', e);
             }
         }
 
-                function logoutUser() {
+        function logoutUser() {
             var curAuth = window.auth || (typeof auth !== 'undefined' ? auth : null);
             if (curAuth && typeof curAuth.signOut === 'function') curAuth.signOut();
             currentUser = null;
