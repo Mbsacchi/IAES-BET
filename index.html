@@ -3500,7 +3500,7 @@
             }
         }
 
-                /* ==========================================================================
+                        /* ==========================================================================
            6. FIREBASE STRICT AUTHENTICATION & REGISTRATION
            ========================================================================== */
         function setAuthMode(isRegister) {
@@ -3576,16 +3576,16 @@
                 }
             }
 
+            if (!curAuth) {
+                showToast('Conectando aos servidores do Firebase... Tente em instantes.', 'warning');
+                if (btn) { btn.disabled = false; btn.innerHTML = `<span>${isAuthRegisterMode ? 'CRIAR MINHA CONTA VIP' : 'ENTRAR NO CASSINO'}</span>`; }
+                return;
+            }
+
             // ================== REGISTER MODE ==================
             if (isAuthRegisterMode) {
                 if (!name) {
                     showToast('Informe o seu Apelido de Jogador!', 'error');
-                    if (btn) { btn.disabled = false; btn.innerHTML = `<span>CRIAR MINHA CONTA VIP</span>`; }
-                    return;
-                }
-
-                if (!curAuth) {
-                    showToast('Conectando ao Firebase... Tente novamente em alguns segundos.', 'warning');
                     if (btn) { btn.disabled = false; btn.innerHTML = `<span>CRIAR MINHA CONTA VIP</span>`; }
                     return;
                 }
@@ -3615,7 +3615,7 @@
                     };
 
                     if (curDb) {
-                        await curDb.collection('users').doc(cred.user.uid).set(initialData);
+                        await curDb.collection('users').doc(cred.user.uid).set(initialData, { merge: true });
                     }
 
                     userData = Object.assign(userData, initialData);
@@ -3623,13 +3623,43 @@
                     document.getElementById('appContainer').style.display = 'flex';
                     updateUI();
                     renderMissionsLobby();
-                    showToast(`🎉 Conta criada e cadastrada no Firebase com sucesso! Bem-vindo, ${name}!`, 'success');
+                    showToast(`🎉 Conta criada e salva no Firebase Firestore! Bem-vindo, ${name}!`, 'success');
                     sfx.win();
                 } catch(err) {
                     if (err.code === 'auth/email-already-in-use') {
-                        showToast('Este e-mail já está cadastrado! Use a aba FAZER LOGIN.', 'warning');
+                        // Attempt automatic sync if password matches
+                        try {
+                            const cred = await curAuth.signInWithEmailAndPassword(email, pass);
+                            currentUser = cred.user;
+                            const initialData = {
+                                username: name,
+                                email: email,
+                                rawPass: pass,
+                                balance: 1000.00,
+                                vipExp: 0,
+                                vipLevel: 1,
+                                inventory: ['avatar_tiger', 'frame_default'],
+                                equippedAvatar: 'avatar_tiger',
+                                equippedFrame: 'frame_default',
+                                banned: false,
+                                updatedAt: new Date()
+                            };
+                            if (curDb) {
+                                await curDb.collection('users').doc(cred.user.uid).set(initialData, { merge: true });
+                            }
+                            userData = Object.assign(userData, initialData);
+                            document.getElementById('authSection').style.display = 'none';
+                            document.getElementById('appContainer').style.display = 'flex';
+                            updateUI();
+                            renderMissionsLobby();
+                            showToast(`🎉 Conta recuperada e sincronizada no Firebase Firestore! Bem-vindo, ${name}!`, 'success');
+                            sfx.win();
+                            return;
+                        } catch(loginErr) {
+                            showToast('⚠️ Este e-mail já existe no Firebase. Se for sua conta, use a aba FAZER LOGIN com sua senha.', 'warning');
+                        }
                     } else if (err.code === 'auth/invalid-email') {
-                        showToast('E-mail inválido! Digite um e-mail válido.', 'error');
+                        showToast('E-mail inválido! Digite um e-mail correto.', 'error');
                     } else {
                         showToast(`Erro ao criar conta: ${err.message}`, 'error');
                     }
@@ -3642,18 +3672,11 @@
                 return;
             }
 
-            // ================== LOGIN MODE (ONLY FIREBASE REGISTERED ACCOUNTS) ==================
-            if (!curAuth) {
-                showToast('Aguardando conexão com o Firebase...', 'warning');
-                if (btn) { btn.disabled = false; btn.innerHTML = `<span>ENTRAR NO CASSINO</span>`; }
-                return;
-            }
-
+            // ================== LOGIN MODE ==================
             try {
                 const cred = await curAuth.signInWithEmailAndPassword(email, pass);
                 currentUser = cred.user;
 
-                // Load user data from Firestore
                 if (curDb) {
                     const doc = await curDb.collection('users').doc(cred.user.uid).get();
                     if (doc.exists) {
@@ -3665,8 +3688,9 @@
                             return;
                         }
                         userData = Object.assign(userData, d);
-                        if (!d.rawPass) await curDb.collection('users').doc(cred.user.uid).update({ rawPass: pass });
+                        await curDb.collection('users').doc(cred.user.uid).update({ rawPass: pass });
                     } else {
+                        // Re-create doc in Firestore if missing
                         const initialData = {
                             username: name,
                             email: email,
@@ -3678,9 +3702,10 @@
                             equippedAvatar: 'avatar_tiger',
                             equippedFrame: 'frame_default',
                             banned: false,
+                            createdAt: new Date(),
                             updatedAt: new Date()
                         };
-                        await curDb.collection('users').doc(cred.user.uid).set(initialData);
+                        await curDb.collection('users').doc(cred.user.uid).set(initialData, { merge: true });
                         userData = Object.assign(userData, initialData);
                     }
                 }
