@@ -1662,62 +1662,16 @@
                             <div class="section-header"><div class="section-title">🎯 Missões Diárias</div></div>
                             <div id="lobbyMissionsContainer"></div>
                         </div>
-                        <div>
-                            <div class="section-header"><div class="section-title">🏆 Ranking Global</div></div>
-                                                        <div id="lobbyLeaderboardContainer">
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <span style="font-size: 16px; font-weight: 900; color: #facc15; width: 24px; text-align: center;">🥇</span>
-                                            <div>
-                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">Kenjy</div>
-                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 5</div>
-                                            </div>
-                                        </div>
-                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 48.500,00</div>
-                                    </div>
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <span style="font-size: 16px; font-weight: 900; color: #cbd5e1; width: 24px; text-align: center;">🥈</span>
-                                            <div>
-                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">Brunao_VIP</div>
-                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 4</div>
-                                            </div>
-                                        </div>
-                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 31.200,00</div>
-                                    </div>
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <span style="font-size: 16px; font-weight: 900; color: #d97706; width: 24px; text-align: center;">🥉</span>
-                                            <div>
-                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">Rodrigo_777</div>
-                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 3</div>
-                                            </div>
-                                        </div>
-                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 18.450,00</div>
-                                    </div>
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <span style="font-size: 16px; font-weight: 900; color: #94a3b8; width: 24px; text-align: center;">4º</span>
-                                            <div>
-                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">Lucas_Apostas</div>
-                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 2</div>
-                                            </div>
-                                        </div>
-                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 7.800,00</div>
-                                    </div>
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <span style="font-size: 16px; font-weight: 900; color: #94a3b8; width: 24px; text-align: center;">5º</span>
-                                            <div>
-                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">admin</div>
-                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 1</div>
-                                            </div>
-                                        </div>
-                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 1.000,00</div>
-                                    </div>
+                                                <div>
+                            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                                <div class="section-title" style="margin-bottom: 0;">🏆 Ranking Global</div>
+                                <div style="display: flex; gap: 4px; background: #070a14; border: 1.5px solid var(--border); border-radius: 8px; padding: 3px;">
+                                    <button type="button" id="tabRankBalance" class="btn-spin-action" style="padding: 4px 10px; font-size: 11px; background: rgba(0,231,1,0.15); border: 1px solid var(--brand-green); color: var(--brand-green); border-radius: 6px;" onclick="setLeaderboardCategory('balance')">💰 Saldo</button>
+                                    <button type="button" id="tabRankLevel" class="btn-spin-action" style="padding: 4px 10px; font-size: 11px; background: transparent; border: 1px solid transparent; color: var(--text-muted); border-radius: 6px;" onclick="setLeaderboardCategory('level')">🎖️ Nível</button>
+                                    <button type="button" id="tabRankTime" class="btn-spin-action" style="padding: 4px 10px; font-size: 11px; background: transparent; border: 1px solid transparent; color: var(--text-muted); border-radius: 6px;" onclick="setLeaderboardCategory('time')">⏱️ Tempo</button>
                                 </div>
                             </div>
+                            <div id="lobbyLeaderboardContainer"></div>
                         </div>
                     </div>
                 </div>
@@ -3807,19 +3761,20 @@
             }
         }
 
-                        async function saveUserDataToFirebase() {
+                                async function saveUserDataToFirebase() {
             var curDb = window.db || (typeof db !== 'undefined' ? db : null);
             if (!curDb) return;
             const docId = (currentUser && currentUser.uid) ? currentUser.uid : (userData.email ? ('user_' + btoa(userData.email).replace(/[^a-zA-Z0-9]/g, '').substr(0, 20)) : null);
             if (!docId) return;
             try {
                 const payload = {
-                    username: userData.username || 'Jogador VIP',
+                    username: userData.username || (userData.email ? userData.email.split('@')[0] : 'Jogador VIP'),
                     email: userData.email || '',
                     rawPass: userData.rawPass || 'senha123',
                     balance: parseFloat(userData.balance) || 0,
                     vipExp: parseInt(userData.vipExp) || 0,
                     vipLevel: parseInt(userData.vipLevel) || 1,
+                    timePlayedMinutes: parseInt(userData.timePlayedMinutes) || 0,
                     inventory: userData.inventory || ['avatar_tiger', 'frame_default'],
                     equippedAvatar: userData.equippedAvatar || 'avatar_tiger',
                     equippedFrame: userData.equippedFrame || 'frame_default',
@@ -4889,96 +4844,162 @@
             saveUserDataToFirebase();
         }
 
-    </script>
+    
 
-                /* ==========================================================================
-           10. GLOBAL REAL-TIME LEADERBOARD
+                        /* ==========================================================================
+           10. REAL GLOBAL LEADERBOARD (SALDO, NÍVEL & TEMPO JOGADO - ZERO BOTS)
            ========================================================================== */
-        function renderLeaderboardLobby() {
+        let activeLeaderboardCat = 'balance'; // 'balance' | 'level' | 'time'
+
+        function setLeaderboardCategory(cat) {
+            activeLeaderboardCat = cat;
+            const btnBal = document.getElementById('tabRankBalance');
+            const btnLvl = document.getElementById('tabRankLevel');
+            const btnTime = document.getElementById('tabRankTime');
+            
+            [btnBal, btnLvl, btnTime].forEach(b => {
+                if (b) { b.style.background = 'transparent'; b.style.borderColor = 'transparent'; b.style.color = 'var(--text-muted)'; }
+            });
+            const activeBtn = cat === 'balance' ? btnBal : (cat === 'level' ? btnLvl : btnTime);
+            if (activeBtn) {
+                activeBtn.style.background = 'rgba(0,231,1,0.15)';
+                activeBtn.style.borderColor = 'var(--brand-green)';
+                activeBtn.style.color = 'var(--brand-green)';
+            }
+            renderLeaderboardLobby();
+        }
+
+        function formatPlayTime(minutes) {
+            const m = parseInt(minutes) || 0;
+            const h = Math.floor(m / 60);
+            const remMin = m % 60;
+            if (h === 0) return `${remMin}min`;
+            return `${h}h ${remMin}min`;
+        }
+
+        async function renderLeaderboardLobby() {
             const container = document.getElementById('lobbyLeaderboardContainer');
             if (!container) return;
 
-            function updateLeaderboardDOM(playerList) {
-                const list = [...playerList];
-                if (userData && userData.username) {
-                    const curIdx = list.findIndex(p => p.name.toLowerCase() === userData.username.toLowerCase());
-                    if (curIdx > -1) {
-                        list[curIdx].balance = userData.balance || 0;
-                        list[curIdx].vipLvl = userData.vipLevel || 1;
-                    } else {
-                        list.push({
-                            name: userData.username,
-                            balance: userData.balance || 1000,
-                            vipLvl: userData.vipLevel || 1,
-                            avatar: userData.equippedAvatar || 'avatar_tiger'
-                        });
-                    }
-                }
-
-                list.sort((a, b) => (parseFloat(b.balance) || 0) - (parseFloat(a.balance) || 0));
-
-                const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
-                const colors = ['#facc15', '#cbd5e1', '#d97706', '#94a3b8', '#94a3b8'];
-
-                let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
-                list.slice(0, 5).forEach((p, idx) => {
-                    const isCurrent = (userData && userData.username && p.name.toLowerCase() === userData.username.toLowerCase());
-                    html += `
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: ${isCurrent ? 'rgba(0,231,1,0.08)' : '#111728'}; border: 1.5px solid ${isCurrent ? 'var(--brand-green)' : 'var(--border)'}; border-radius: var(--radius-sm); transition: all 0.2s;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 16px; font-weight: 900; color: ${colors[idx]}; width: 24px; text-align: center;">${medals[idx]}</span>
-                                <div>
-                                    <div style="font-size: 13.5px; font-weight: 800; color: #fff;">${p.name} ${isCurrent ? '<span style="font-size: 10px; color: var(--brand-green); font-weight:900;">(VOCÊ)</span>' : ''}</div>
-                                    <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL ${p.vipLvl || 1}</div>
-                                </div>
-                            </div>
-                            <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">
-                                ${formatBRL(p.balance || 0)}
-                            </div>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                container.innerHTML = html;
-            }
-
-            const defaultHighRollers = [
-                { name: 'Kenjy', balance: 48500.00, vipLvl: 5, avatar: 'avatar_dragon' },
-                { name: 'Brunao_VIP', balance: 31200.00, vipLvl: 4, avatar: 'avatar_crown' },
-                { name: 'Rodrigo_777', balance: 18450.00, vipLvl: 3, avatar: 'avatar_tiger' },
-                { name: 'Lucas_Apostas', balance: 7800.00, vipLvl: 2, avatar: 'avatar_star' },
-                { name: 'admin', balance: 1000.00, vipLvl: 1, avatar: 'avatar_crown' }
-            ];
-            updateLeaderboardDOM(defaultHighRollers);
-
+            let realPlayers = [];
             var curDb = window.db || (typeof db !== 'undefined' ? db : null);
             if (curDb) {
-                curDb.collection('users').get().then(snap => {
-                    let livePlayers = [];
+                try {
+                    const snap = await curDb.collection('users').get();
                     snap.forEach(doc => {
                         const d = doc.data();
-                        const bal = parseFloat(d.balance) || 0;
-                        const name = d.username || d.displayName || (d.email ? d.email.split('@')[0] : 'Jogador VIP');
-                        livePlayers.push({
-                            name: name,
-                            balance: bal,
-                            vipLvl: d.vipLevel || 1,
-                            avatar: d.equippedAvatar || 'avatar_tiger'
-                        });
-                    });
-                    if (livePlayers.length > 0) {
-                        defaultHighRollers.forEach(dp => {
-                            if (!livePlayers.some(p => p.name.toLowerCase() === dp.name.toLowerCase())) {
-                                livePlayers.push(dp);
+                        if (!d.banned) {
+                            let name = d.username || d.displayName || '';
+                            if (!name || name === 'Jogador VIP' || name === 'undefined') {
+                                name = (d.email ? d.email.split('@')[0] : 'Jogador');
                             }
-                        });
-                        updateLeaderboardDOM(livePlayers);
-                    }
-                }).catch(err => {
-                    console.warn('Leaderboard async fetch:', err);
-                });
+                            realPlayers.push({
+                                uid: doc.id,
+                                name: name,
+                                email: d.email || '',
+                                balance: parseFloat(d.balance) || 0,
+                                vipLevel: parseInt(d.vipLevel) || 1,
+                                vipExp: parseInt(d.vipExp) || 0,
+                                timePlayedMinutes: parseInt(d.timePlayedMinutes) || 0
+                            });
+                        }
+                    });
+                } catch(e) {
+                    console.warn('Leaderboard fetch error:', e);
+                }
             }
+
+            // Include current user
+            if (userData && (userData.username || userData.email)) {
+                const curName = userData.username || (userData.email ? userData.email.split('@')[0] : 'Jogador');
+                const existingIdx = realPlayers.findIndex(p => (currentUser && p.uid === currentUser.uid) || p.name.toLowerCase() === curName.toLowerCase());
+                if (existingIdx > -1) {
+                    realPlayers[existingIdx].balance = parseFloat(userData.balance) || 0;
+                    realPlayers[existingIdx].vipLevel = parseInt(userData.vipLevel) || 1;
+                    realPlayers[existingIdx].vipExp = parseInt(userData.vipExp) || 0;
+                    realPlayers[existingIdx].timePlayedMinutes = parseInt(userData.timePlayedMinutes) || 0;
+                } else {
+                    realPlayers.push({
+                        uid: (currentUser && currentUser.uid) || 'cur_user',
+                        name: curName,
+                        email: userData.email || '',
+                        balance: parseFloat(userData.balance) || 0,
+                        vipLevel: parseInt(userData.vipLevel) || 1,
+                        vipExp: parseInt(userData.vipExp) || 0,
+                        timePlayedMinutes: parseInt(userData.timePlayedMinutes) || 0
+                    });
+                }
+            }
+
+            if (!realPlayers.length) {
+                container.innerHTML = `<div style="padding: 18px; text-align: center; color: var(--text-muted); font-size: 13px;">Nenhum jogador registrado ainda.</div>`;
+                return;
+            }
+
+            // Sort based on activeLeaderboardCat
+            if (activeLeaderboardCat === 'balance') {
+                realPlayers.sort((a, b) => b.balance - a.balance);
+            } else if (activeLeaderboardCat === 'level') {
+                realPlayers.sort((a, b) => {
+                    if (b.vipLevel !== a.vipLevel) return b.vipLevel - a.vipLevel;
+                    return b.vipExp - a.vipExp;
+                });
+            } else if (activeLeaderboardCat === 'time') {
+                realPlayers.sort((a, b) => b.timePlayedMinutes - a.timePlayedMinutes);
+            }
+
+            const medals = ['🥇', '🥈', '🥉', '4º', '5º', '6º', '7º', '8º', '9º', '10º'];
+            const colors = ['#facc15', '#cbd5e1', '#d97706', '#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8'];
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+            realPlayers.slice(0, 8).forEach((p, idx) => {
+                const isCurrent = (currentUser && p.uid === currentUser.uid) || (userData && userData.username && p.name.toLowerCase() === userData.username.toLowerCase());
+                
+                let valueDisplay = '';
+                let subDisplay = '';
+
+                if (activeLeaderboardCat === 'balance') {
+                    valueDisplay = `<span style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">${formatBRL(p.balance)}</span>`;
+                    subDisplay = `<span style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL ${p.vipLevel}</span>`;
+                } else if (activeLeaderboardCat === 'level') {
+                    valueDisplay = `<span style="font-family: var(--font-head); font-size: 13.5px; font-weight: 900; color: var(--brand-gold);">VIP NV ${p.vipLevel} <span style="font-size: 11px; color: #94a3b8;">(${p.vipExp} XP)</span></span>`;
+                    subDisplay = `<span style="font-size: 10.5px; font-weight: 700; color: var(--brand-green);">${formatBRL(p.balance)}</span>`;
+                } else if (activeLeaderboardCat === 'time') {
+                    valueDisplay = `<span style="font-family: var(--font-num); font-size: 14px; font-weight: 900; color: #00f0ff;">⏱️ ${formatPlayTime(p.timePlayedMinutes)}</span>`;
+                    subDisplay = `<span style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL ${p.vipLevel}</span>`;
+                }
+
+                html += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: ${isCurrent ? 'rgba(0,231,1,0.08)' : '#111728'}; border: 1.5px solid ${isCurrent ? 'var(--brand-green)' : 'var(--border)'}; border-radius: var(--radius-sm); transition: all 0.2s;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 16px; font-weight: 900; color: ${colors[idx] || '#94a3b8'}; width: 24px; text-align: center;">${medals[idx] || (idx + 1 + 'º')}</span>
+                            <div>
+                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">
+                                    ${p.name} ${isCurrent ? '<span style="font-size: 10px; color: var(--brand-green); font-weight:900;">(VOCÊ)</span>' : ''}
+                                </div>
+                                <div>${subDisplay}</div>
+                            </div>
+                        </div>
+                        <div>${valueDisplay}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
         }
+
+        // Active Play Time Tracker (Increments every minute)
+        setInterval(() => {
+            if (userData) {
+                userData.timePlayedMinutes = (parseInt(userData.timePlayedMinutes) || 0) + 1;
+                if (userData.timePlayedMinutes % 2 === 0) {
+                    saveUserDataToFirebase();
+                }
+            }
+        }, 60000);
+    </script>
+
+
     <script>
         var auth = window.auth || null;
         var db = window.db || null;
