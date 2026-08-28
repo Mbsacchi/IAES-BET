@@ -3842,19 +3842,44 @@
             if (typeof renderLeaderboardLobby === 'function') renderLeaderboardLobby();
         }
 
-        function addVipExp(amount) {
-            userData.vipExp = (userData.vipExp || 0) + Math.round(amount);
-            const calculatedLevel = Math.floor(userData.vipExp / 500) + 1;
-            
-            checkDailyQuestsProgress('bet', amount);
+                /* ==========================================================================
+           5. VIP SYSTEM & 1000% BALANCED PROGRESSION (ZERO OVERFLOW)
+           ========================================================================== */
+        function getXpForLevel(lvl) {
+            const l = Math.max(1, Math.min(50, parseInt(lvl) || 1));
+            return Math.floor(1000 * Math.pow(l, 1.8));
+        }
 
-            if (calculatedLevel > (userData.vipLevel || 1)) {
-                userData.vipLevel = calculatedLevel;
-                const rewardBonus = calculatedLevel * 50;
-                userData.balance += rewardBonus;
-                showToast(`🎉 SUBIU PARA O NÍVEL ${calculatedLevel}! Ganhou +${formatBRL(rewardBonus)}!`, 'gold');
-                showBigWinOverlay(rewardBonus, `SUBIU DE NÍVEL: NÍVEL ${calculatedLevel}!`);
+        function addVipExp(betAmount) {
+            // 1000% harder progression: 0.05 XP per R$ 1 wagered (R$ 20 bet = 1 XP)
+            const xpGained = Math.max(1, Math.floor(parseFloat(betAmount) * 0.05));
+            let currentExp = parseInt(userData.vipExp) || 0;
+            let currentLvl = parseInt(userData.vipLevel) || 1;
+
+            // Sanitize legacy overflow or scientific notation
+            if (currentLvl > 50 || currentExp > 5000000) {
+                currentLvl = 1;
+                currentExp = 150;
+                userData.vipLevel = 1;
+                userData.vipExp = 150;
             }
+
+            currentExp += xpGained;
+            let nextReq = getXpForLevel(currentLvl);
+
+            while (currentExp >= nextReq && currentLvl < 50) {
+                currentExp -= nextReq;
+                currentLvl++;
+                userData.vipLevel = currentLvl;
+                const rewardBonus = currentLvl * 25;
+                userData.balance += rewardBonus;
+                showToast(`🎉 SUBIU PARA O NÍVEL VIP ${currentLvl}! Recompensa: +${formatBRL(rewardBonus)}!`, 'gold');
+                showBigWinOverlay(rewardBonus, `VIP NÍVEL ${currentLvl}!`);
+                nextReq = getXpForLevel(currentLvl);
+            }
+
+            userData.vipExp = currentExp;
+            checkDailyQuestsProgress('bet', betAmount);
             updateUI();
         }
 
@@ -5000,11 +5025,12 @@
     </script>
 
 
-    <script>
+        <script>
         var auth = window.auth || null;
         var db = window.db || null;
         const slotTurboState = {};
         const slotAutoIntervals = {};
+        const freeSpinsActive = {};
 
         function toggleSlotTurbo(gameKey) {
             slotTurboState[gameKey] = !slotTurboState[gameKey];
@@ -5060,7 +5086,47 @@
             else spinGenericSlot(gameKey);
         }
 
-        function buySlotBonusAction(gameKey, multCost) {
+        async function startFreeSpinsSession(gameKey, bet, spinsCount = 10) {
+            if (freeSpinsActive[gameKey]) return;
+            freeSpinsActive[gameKey] = true;
+
+            showBigWinOverlay(0, `🎉 ${spinsCount} RODADAS GRÁTIS ATIVADAS!`);
+            sfx.bigWin();
+            triggerConfetti();
+            await new Promise(r => setTimeout(r, 2200));
+
+            let totalBonusWin = 0;
+            for (let round = 1; round <= spinsCount; round++) {
+                showToast(`🎰 Rodada Grátis ${round}/${spinsCount} em andamento...`, 'gold');
+                
+                // Execute free spin with boosted multiplier
+                let roundWin = 0;
+                if (gameKey === 'bonanza') roundWin = await executeBonanzaSpin(bet, true);
+                else if (gameKey === 'zeus') roundWin = await executeZeusSpin(bet, true);
+                else if (gameKey === 'tiger') roundWin = await executeTigerSpin(bet, true);
+                else if (gameKey === 'slot') roundWin = await executeNinjaSpin(bet, true);
+                else roundWin = await executeGenericSlotSpin(gameKey, bet, true);
+
+                totalBonusWin += roundWin;
+                await new Promise(r => setTimeout(r, slotTurboState[gameKey] ? 600 : 1200));
+            }
+
+            freeSpinsActive[gameKey] = false;
+            userData.balance += totalBonusWin;
+            addBetHistory(`${gameKey.toUpperCase()} 10 Free Spins`, bet, totalBonusWin, '⭐');
+            updateUI();
+            saveUserDataToFirebase();
+
+            showBigWinOverlay(totalBonusWin, `TOTAL DAS 10 RODADAS GRÁTIS!`);
+            sfx.bigWin();
+            triggerConfetti();
+        }
+
+        async function buySlotBonusAction(gameKey, multCost = 75) {
+            if (freeSpinsActive[gameKey]) {
+                showToast('Rodadas grátis já em andamento!', 'warning');
+                return;
+            }
             const betInputs = {
                 bonanza: 'bonanzaBetInput', zeus: 'zeusBetInput', tiger: 'tigerBetInput',
                 ox: 'oxBetInput', mouse: 'mouseBetInput', dog: 'dogBetInput',
@@ -5081,37 +5147,89 @@
             userData.balance -= cost;
             addVipExp(cost);
             updateUI();
+            saveUserDataToFirebase();
 
-            showToast(`⭐ BÔNUS COMPRADO POR ${formatBRL(cost)}! GIROS ESPECIAIS GARANTIDOS!`, 'gold');
-            sfx.bigWin();
-            triggerConfetti();
+            showToast(`⭐ BÔNUS COMPRADO POR ${formatBRL(cost)}! INICIANDO 10 RODADAS GRÁTIS!`, 'gold');
+            sfx.coin();
 
-            // Trigger guaranteed high-tier win spin
-            setTimeout(() => {
-                triggerSlotSpin(gameKey);
-            }, 500);
+            await startFreeSpinsSession(gameKey, bet, 10);
         }
 
-        /* ==========================================================================
-           7. SUGAR BONANZA DELUXE (6x5 CASCADE WITH MULTIPLIER BOMBS)
-           ========================================================================== */
-        const BONANZA_SYMBOLS = ['🍬', '🍭', '🍇', '🍉', '🍓', '🍌', '🍎', '💣', '⭐'];
-        let bonanzaAutoInterval = null;
+                        async function executeBonanzaSpin(bet, isFree = false) {
+            const isTurbo = slotTurboState['bonanza'] || false;
+            const statusEl = document.getElementById('bonanzaStatusText');
+            if (statusEl) statusEl.innerText = isFree ? '⭐ RODADA GRÁTIS EM ANDAMENTO...' : 'Chuva de doces caindo...';
+            const comboEl = document.getElementById('bonanzaComboDisp');
+            if (comboEl) comboEl.innerText = '1x';
 
-        function initSugarBonanzaGrid() {
-            const grid = document.getElementById('bonanzaGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
+            const symbols = [];
             for (let i = 0; i < 30; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'slot-symbol-box';
-                cell.id = `bonCell_${i}`;
-                cell.innerText = BONANZA_SYMBOLS[Math.floor(Math.random() * (BONANZA_SYMBOLS.length - 2))];
-                grid.appendChild(cell);
+                const isBomb = Math.random() < (isFree ? 0.20 : 0.05);
+                const isScatter = Math.random() < 0.005; // 0.5% very rare natural scatter
+                let sym;
+                if (isBomb) sym = '💣';
+                else if (isScatter) sym = '⭐';
+                else sym = BONANZA_SYMBOLS[Math.floor(Math.random() * (BONANZA_SYMBOLS.length - 2))];
+                symbols.push(sym);
+            }
+
+            for (let i = 0; i < 30; i++) {
+                const cell = document.getElementById(`bonCell_${i}`);
+                if (cell) {
+                    cell.classList.remove('win-pulse', 'cascade-drop');
+                    void cell.offsetWidth;
+                    cell.classList.add('cascade-drop');
+                    cell.innerText = symbols[i];
+                }
+            }
+
+            await new Promise(r => setTimeout(r, isTurbo ? 180 : 450));
+
+            const counts = {};
+            symbols.forEach(s => counts[s] = (counts[s] || 0) + 1);
+
+            let winMultiplier = 0;
+            let bombMultiplier = 1;
+
+            if (counts['💣']) {
+                bombMultiplier += counts['💣'] * (isFree ? 4 : 2);
+                if (comboEl) comboEl.innerText = `${bombMultiplier}x`;
+                sfx.coin();
+            }
+
+            for (const [sym, cnt] of Object.entries(counts)) {
+                if (sym !== '💣' && sym !== '⭐' && cnt >= 8) {
+                    winMultiplier += (cnt * 0.45);
+                    for (let i = 0; i < 30; i++) {
+                        if (symbols[i] === sym) {
+                            const cell = document.getElementById(`bonCell_${i}`);
+                            if (cell) cell.classList.add('win-pulse');
+                        }
+                    }
+                }
+            }
+
+            if (counts['⭐'] >= 4) {
+                winMultiplier += 15;
+                if (!isFree) {
+                    showToast('🍬 4 DOCES DOURADOS! 10 RODADAS GRÁTIS DESBLOQUEADAS!', 'gold');
+                    setTimeout(() => startFreeSpinsSession('bonanza', bet, 10), 1000);
+                }
+            }
+
+            if (winMultiplier > 0) {
+                const totalWin = bet * winMultiplier * bombMultiplier;
+                if (statusEl) statusEl.innerText = `GANHOU ${formatBRL(totalWin)}! (${(winMultiplier * bombMultiplier).toFixed(1)}x)`;
+                sfx.win();
+                return totalWin;
+            } else {
+                if (statusEl) statusEl.innerText = 'Sem combinações.';
+                return 0;
             }
         }
 
-                async function playSugarBonanza() {
+        async function playSugarBonanza() {
+            if (freeSpinsActive['bonanza']) return;
             const betInput = document.getElementById('bonanzaBetInput');
             const bet = parseFloat(betInput ? betInput.value : 10) || 10;
             if (userData.balance < bet) {
@@ -5124,78 +5242,15 @@
             updateUI();
             sfx.spin();
 
-            const isTurbo = slotTurboState['bonanza'] || false;
-            const statusEl = document.getElementById('bonanzaStatusText');
-            if (statusEl) statusEl.innerText = 'Chuva de doces caindo...';
-            const comboEl = document.getElementById('bonanzaComboDisp');
-            if (comboEl) comboEl.innerText = '1x';
-
-            const symbols = [];
-            for (let i = 0; i < 30; i++) {
-                const isBomb = Math.random() < 0.08;
-                const isScatter = Math.random() < 0.04;
-                let sym;
-                if (isBomb) sym = '💣';
-                else if (isScatter) sym = '⭐';
-                else sym = BONANZA_SYMBOLS[Math.floor(Math.random() * (BONANZA_SYMBOLS.length - 2))];
-                symbols.push(sym);
-            }
-
-            // Fill Grid with Cascade Animation
-            for (let i = 0; i < 30; i++) {
-                const cell = document.getElementById(`bonCell_${i}`);
-                if (cell) {
-                    cell.classList.remove('win-pulse', 'cascade-drop');
-                    void cell.offsetWidth; // trigger reflow
-                    cell.classList.add('cascade-drop');
-                    cell.innerText = symbols[i];
-                }
-            }
-
-            await new Promise(r => setTimeout(r, isTurbo ? 220 : 550));
-
-            // Count occurrences
-            const counts = {};
-            symbols.forEach(s => counts[s] = (counts[s] || 0) + 1);
-
-            let winMultiplier = 0;
-            let bombMultiplier = 1;
-
-            if (counts['💣']) {
-                bombMultiplier += counts['💣'] * 2;
-                if (comboEl) comboEl.innerText = `${bombMultiplier}x`;
-                sfx.coin();
-            }
-
-            for (const [sym, cnt] of Object.entries(counts)) {
-                if (sym !== '💣' && sym !== '⭐' && cnt >= 8) {
-                    winMultiplier += (cnt * 0.45);
-                    // highlight winning cells
-                    for (let i = 0; i < 30; i++) {
-                        if (symbols[i] === sym) {
-                            const cell = document.getElementById(`bonCell_${i}`);
-                            if (cell) cell.classList.add('win-pulse');
-                        }
-                    }
-                }
-            }
-
-            if (counts['⭐'] >= 4) {
-                winMultiplier += 15;
-                showToast('🍬 4+ DOCES DOURADOS! BÔNUS ATIVADO!', 'gold');
-            }
-
-            if (winMultiplier > 0) {
-                const totalWin = bet * winMultiplier * bombMultiplier;
+            const totalWin = await executeBonanzaSpin(bet, false);
+            if (totalWin > 0) {
                 userData.balance += totalWin;
                 addBetHistory('Sugar Bonanza', bet, totalWin, '🍬');
                 updateUI();
-                if (statusEl) statusEl.innerText = `GANHOU ${formatBRL(totalWin)}! (${(winMultiplier * bombMultiplier).toFixed(1)}x)`;
                 if (totalWin >= bet * 5) showBigWinOverlay(totalWin, 'DOCES EXPLOSIVOS!');
-                else { sfx.win(); triggerConfetti(); }
+                else triggerConfetti();
             } else {
                 addBetHistory('Sugar Bonanza', bet, 0, '🍬');
-                if (statusEl) statusEl.innerText = 'Sem combinações. Tente de novo!';
                 sfx.lose();
             }
             saveUserDataToFirebase();
@@ -5893,8 +5948,8 @@
             saveUserDataToFirebase();
         }
 
-        /* ==========================================================================
-           14. PENALTY SHOOTOUT & WORLD CUP
+                /* ==========================================================================
+           14. PENALTY SHOOTOUT (FIXED TOP-CENTER GOALKEEPER DEFEND BUG)
            ========================================================================== */
         let penaltyStreak = 0;
         const PENALTY_MULTS = [1.92, 3.84, 7.68, 15.36, 30.72];
@@ -5912,9 +5967,10 @@
                 updateUI();
             }
 
-            const goalieZones = ['top-left', 'top-right', 'center', 'bottom-left', 'bottom-right'];
+            // Exactly matching 5 penalty target zones
+            const goalieZones = ['top-left', 'top-right', 'top-center', 'bottom-left', 'bottom-right'];
             const goalieChoice = goalieZones[Math.floor(Math.random() * goalieZones.length)];
-            const isGoal = zone !== goalieChoice;
+            const isGoal = (zone !== goalieChoice);
 
             const keeperEl = document.getElementById('penaltyGoalkeeperEl');
             const ballEl = document.getElementById('penaltyBallEl');
@@ -5923,17 +5979,17 @@
             const ballCoords = {
                 'top-left': 'translate(-140px, -180px) scale(0.65) rotate(720deg)',
                 'top-right': 'translate(140px, -180px) scale(0.65) rotate(720deg)',
-                'center': 'translate(0, -140px) scale(0.65) rotate(720deg)',
+                'top-center': 'translate(0px, -180px) scale(0.65) rotate(720deg)',
                 'bottom-left': 'translate(-140px, -60px) scale(0.7) rotate(720deg)',
                 'bottom-right': 'translate(140px, -60px) scale(0.7) rotate(720deg)'
             };
-            ballEl.style.transform = ballCoords[zone] || 'translate(0, -120px)';
+            ballEl.style.transform = ballCoords[zone] || 'translate(0, -140px)';
 
-            // Animate Goalie Dive
+            // Animate Goalie Dive to All 5 Spots including Top-Center
             const goalieMoves = {
                 'top-left': 'translate(-110px, -70px) rotate(-35deg) scale(1.1)',
                 'top-right': 'translate(110px, -70px) rotate(35deg) scale(1.1)',
-                'center': 'translate(0, -30px) scale(1.15)',
+                'top-center': 'translate(0px, -75px) scale(1.2)',
                 'bottom-left': 'translate(-120px, 0) rotate(-55deg)',
                 'bottom-right': 'translate(120px, 0) rotate(55deg)'
             };
@@ -5946,12 +6002,12 @@
                     penaltyStreak++;
                     const currentMult = PENALTY_MULTS[Math.min(penaltyStreak - 1, PENALTY_MULTS.length - 1)];
                     document.getElementById('penaltyCurrentMult').innerText = `${currentMult}x`;
-                    document.getElementById('penaltyStatusText').innerText = `⚽ GOLAÇO NO ÂNGULO! Chutes seguidos: ${penaltyStreak}`;
+                    document.getElementById('penaltyStatusText').innerText = `⚽ GOLAÇO! Chutes seguidos: ${penaltyStreak}`;
                     document.getElementById('btnCashoutPenalty').style.display = 'inline-block';
                     sfx.win();
                     triggerConfetti();
                 } else {
-                    document.getElementById('penaltyStatusText').innerText = `🧤 O GOLEIRO DEFENDEU! Fim de jogo.`;
+                    document.getElementById('penaltyStatusText').innerText = `🧤 O GOLEIRO DEFENDEU NO MEIO! Fim de jogo.`;
                     document.getElementById('btnCashoutPenalty').style.display = 'none';
                     addBetHistory('Pênalti Shootout', bet, 0, '⚽');
                     penaltyStreak = 0;
