@@ -5025,7 +5025,7 @@
     </script>
 
 
-        <script>
+            <script>
         var auth = window.auth || null;
         var db = window.db || null;
         const slotTurboState = {};
@@ -5090,16 +5090,15 @@
             if (freeSpinsActive[gameKey]) return;
             freeSpinsActive[gameKey] = true;
 
-            showBigWinOverlay(0, `🎉 ${spinsCount} RODADAS GRÁTIS ATIVADAS!`);
+            showBigWinOverlay(0, `🎉 ${spinsCount} RODADAS GRÁTIS!`);
             sfx.bigWin();
             triggerConfetti();
             await new Promise(r => setTimeout(r, 2200));
 
             let totalBonusWin = 0;
             for (let round = 1; round <= spinsCount; round++) {
-                showToast(`🎰 Rodada Grátis ${round}/${spinsCount} em andamento...`, 'gold');
+                showToast(`🎰 Rodada Grátis ${round}/${spinsCount}...`, 'gold');
                 
-                // Execute free spin with boosted multiplier
                 let roundWin = 0;
                 if (gameKey === 'bonanza') roundWin = await executeBonanzaSpin(bet, true);
                 else if (gameKey === 'zeus') roundWin = await executeZeusSpin(bet, true);
@@ -5108,12 +5107,12 @@
                 else roundWin = await executeGenericSlotSpin(gameKey, bet, true);
 
                 totalBonusWin += roundWin;
-                await new Promise(r => setTimeout(r, slotTurboState[gameKey] ? 600 : 1200));
+                await new Promise(r => setTimeout(r, slotTurboState[gameKey] ? 500 : 1100));
             }
 
             freeSpinsActive[gameKey] = false;
             userData.balance += totalBonusWin;
-            addBetHistory(`${gameKey.toUpperCase()} 10 Free Spins`, bet, totalBonusWin, '⭐');
+            addBetHistory(`${gameKey.toUpperCase()} 10 Rodadas Grátis`, bet, totalBonusWin, '⭐');
             updateUI();
             saveUserDataToFirebase();
 
@@ -5155,7 +5154,25 @@
             await startFreeSpinsSession(gameKey, bet, 10);
         }
 
-                        async function executeBonanzaSpin(bet, isFree = false) {
+        /* ==========================================================================
+           7. SUGAR BONANZA DELUXE (6x5 CASCADE)
+           ========================================================================== */
+        const BONANZA_SYMBOLS = ['🍬', '🍭', '🍇', '🍉', '🍓', '🍌', '🍎', '💣', '⭐'];
+
+        function initSugarBonanzaGrid() {
+            const grid = document.getElementById('bonanzaGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let i = 0; i < 30; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'slot-symbol-box';
+                cell.id = `bonCell_${i}`;
+                cell.innerText = BONANZA_SYMBOLS[Math.floor(Math.random() * (BONANZA_SYMBOLS.length - 2))];
+                grid.appendChild(cell);
+            }
+        }
+
+        async function executeBonanzaSpin(bet, isFree = false) {
             const isTurbo = slotTurboState['bonanza'] || false;
             const statusEl = document.getElementById('bonanzaStatusText');
             if (statusEl) statusEl.innerText = isFree ? '⭐ RODADA GRÁTIS EM ANDAMENTO...' : 'Chuva de doces caindo...';
@@ -5164,8 +5181,8 @@
 
             const symbols = [];
             for (let i = 0; i < 30; i++) {
-                const isBomb = Math.random() < (isFree ? 0.20 : 0.05);
-                const isScatter = Math.random() < 0.005; // 0.5% very rare natural scatter
+                const isBomb = Math.random() < (isFree ? 0.25 : 0.05);
+                const isScatter = Math.random() < 0.002; // Very rare natural scatter 0.2%
                 let sym;
                 if (isBomb) sym = '💣';
                 else if (isScatter) sym = '⭐';
@@ -5192,7 +5209,7 @@
             let bombMultiplier = 1;
 
             if (counts['💣']) {
-                bombMultiplier += counts['💣'] * (isFree ? 4 : 2);
+                bombMultiplier += counts['💣'] * (isFree ? 5 : 2);
                 if (comboEl) comboEl.innerText = `${bombMultiplier}x`;
                 sfx.coin();
             }
@@ -5233,7 +5250,7 @@
             const betInput = document.getElementById('bonanzaBetInput');
             const bet = parseFloat(betInput ? betInput.value : 10) || 10;
             if (userData.balance < bet) {
-                showToast('Saldo insuficiente para a aposta!', 'error');
+                showToast('Saldo insuficiente!', 'error');
                 sfx.lose();
                 return;
             }
@@ -5257,9 +5274,10 @@
         }
 
         /* ==========================================================================
-           8. ZEUS GATES OF OLYMPUS (6x5 CASCADE & DIVINE LIGHTNING ORBS)
+           8. ZEUS GATES OF OLYMPUS (6x5 CASCADE & ORBS)
            ========================================================================== */
-        const ZEUS_SYMBOLS = ['👑', '⚡', '💍', '🏺', '💎', '🔥', '🛡️', '⚔️'];
+        const ZEUS_SYMBOLS = ['👑', '⚡', '💍', '🏺', '💎', '🔥', '🛡️', '⚔️', '⭐'];
+
         function initZeusGrid() {
             const grid = document.getElementById('zeusGrid');
             if (!grid) return;
@@ -5268,33 +5286,23 @@
                 const cell = document.createElement('div');
                 cell.className = 'slot-symbol-box';
                 cell.id = `zeusCell_${i}`;
-                cell.innerText = ZEUS_SYMBOLS[Math.floor(Math.random() * ZEUS_SYMBOLS.length)];
+                cell.innerText = ZEUS_SYMBOLS[Math.floor(Math.random() * (ZEUS_SYMBOLS.length - 1))];
                 grid.appendChild(cell);
             }
         }
 
-                async function playZeusOlympus() {
-            const betInput = document.getElementById('zeusBetInput');
-            const bet = parseFloat(betInput ? betInput.value : 20) || 20;
-            if (userData.balance < bet) {
-                showToast('Saldo insuficiente!', 'error');
-                sfx.lose();
-                return;
-            }
-            userData.balance -= bet;
-            addVipExp(bet);
-            updateUI();
-            sfx.spin();
-
+        async function executeZeusSpin(bet, isFree = false) {
             const isTurbo = slotTurboState['zeus'] || false;
             const statusEl = document.getElementById('zeusStatusText');
-            if (statusEl) statusEl.innerText = 'Zeus convocando raios...';
+            if (statusEl) statusEl.innerText = isFree ? '⚡ ZEUS RODADA GRÁTIS...' : 'Zeus convocando raios...';
             const multDisp = document.getElementById('zeusMultDisp');
             if (multDisp) multDisp.innerText = '1x';
 
             const symbols = [];
             for (let i = 0; i < 30; i++) {
-                symbols.push(ZEUS_SYMBOLS[Math.floor(Math.random() * ZEUS_SYMBOLS.length)]);
+                const isScatter = Math.random() < 0.002;
+                let sym = isScatter ? '⭐' : ZEUS_SYMBOLS[Math.floor(Math.random() * (ZEUS_SYMBOLS.length - 1))];
+                symbols.push(sym);
             }
 
             for (let i = 0; i < 30; i++) {
@@ -5307,14 +5315,14 @@
                 }
             }
 
-            await new Promise(r => setTimeout(r, isTurbo ? 220 : 550));
+            await new Promise(r => setTimeout(r, isTurbo ? 180 : 450));
 
             const counts = {};
             symbols.forEach(s => counts[s] = (counts[s] || 0) + 1);
 
             let winMultiplier = 0;
             for (const [sym, cnt] of Object.entries(counts)) {
-                if (cnt >= 8) {
+                if (cnt >= 8 && sym !== '⭐') {
                     winMultiplier += (cnt * 0.5);
                     for (let i = 0; i < 30; i++) {
                         if (symbols[i] === sym) {
@@ -5326,34 +5334,63 @@
             }
 
             let orbMult = 1;
-            if (Math.random() < 0.25) {
-                const orbs = [2, 5, 10, 25, 50, 100];
+            if (Math.random() < (isFree ? 0.60 : 0.20)) {
+                const orbs = isFree ? [5, 10, 25, 50, 100, 250] : [2, 5, 10, 25, 50];
                 orbMult = orbs[Math.floor(Math.random() * orbs.length)];
                 if (multDisp) multDisp.innerText = `${orbMult}x`;
                 showToast(`⚡ RAIO DE ZEUS: Multiplicador ${orbMult}x!`, 'gold');
                 sfx.coin();
             }
 
+            if (counts['⭐'] >= 4 && !isFree) {
+                showToast('⚡ 4 RAIS DOURADOS! 10 RODADAS GRÁTIS!', 'gold');
+                setTimeout(() => startFreeSpinsSession('zeus', bet, 10), 1000);
+            }
+
             if (winMultiplier > 0) {
                 const totalWin = bet * winMultiplier * orbMult;
+                if (statusEl) statusEl.innerText = `VITÓRIA DOS DEUSES: +${formatBRL(totalWin)}!`;
+                sfx.win();
+                return totalWin;
+            } else {
+                if (statusEl) statusEl.innerText = 'Sem vitórias divinas.';
+                return 0;
+            }
+        }
+
+        async function playZeusOlympus() {
+            if (freeSpinsActive['zeus']) return;
+            const betInput = document.getElementById('zeusBetInput');
+            const bet = parseFloat(betInput ? betInput.value : 20) || 20;
+            if (userData.balance < bet) {
+                showToast('Saldo insuficiente!', 'error');
+                sfx.lose();
+                return;
+            }
+            userData.balance -= bet;
+            addVipExp(bet);
+            updateUI();
+            sfx.spin();
+
+            const totalWin = await executeZeusSpin(bet, false);
+            if (totalWin > 0) {
                 userData.balance += totalWin;
                 addBetHistory('Zeus Olympus', bet, totalWin, '⚡');
                 updateUI();
-                if (statusEl) statusEl.innerText = `VITÓRIA DOS DEUSES: +${formatBRL(totalWin)}!`;
                 if (totalWin >= bet * 5) showBigWinOverlay(totalWin, 'PODER DO OLIMPO!');
-                else { sfx.win(); triggerConfetti(); }
+                else triggerConfetti();
             } else {
                 addBetHistory('Zeus Olympus', bet, 0, '⚡');
-                if (statusEl) statusEl.innerText = 'Sem vitórias divinas. Tente de novo!';
                 sfx.lose();
             }
             saveUserDataToFirebase();
         }
 
         /* ==========================================================================
-           9. FORTUNE TIGER (3x3 GOLDEN RESPIN & 10X FULL SCREEN)
+           9. FORTUNE TIGER (3x3 TIGER)
            ========================================================================== */
         const TIGER_SYMBOLS = ['🧧', '🍊', '🔔', '💰', '🪙', '🐯', '💎'];
+
         function initTigerGrid() {
             const grid = document.getElementById('tigerReelsGrid');
             if (!grid) return;
@@ -5367,22 +5404,10 @@
             }
         }
 
-                async function spinFortuneTiger() {
-            const betInput = document.getElementById('tigerBetInput');
-            const bet = parseFloat(betInput ? betInput.value : 15) || 15;
-            if (userData.balance < bet) {
-                showToast('Saldo insuficiente!', 'error');
-                sfx.lose();
-                return;
-            }
-            userData.balance -= bet;
-            addVipExp(bet);
-            updateUI();
-            sfx.spin();
-
+        async function executeTigerSpin(bet, isFree = false) {
             const isTurbo = slotTurboState['tiger'] || false;
             const statusEl = document.getElementById('tigerStatusText');
-            if (statusEl) statusEl.innerText = 'O Tigre da Fortuna está girando...';
+            if (statusEl) statusEl.innerText = isFree ? '🐯 TIGRE RODADA GRÁTIS...' : 'O Tigre está girando...';
 
             const symbols = [];
             for (let i = 0; i < 9; i++) {
@@ -5399,9 +5424,8 @@
                 }
             }
 
-            await new Promise(r => setTimeout(r, isTurbo ? 200 : 500));
+            await new Promise(r => setTimeout(r, isTurbo ? 180 : 450));
 
-            // Check full screen or line matches
             const allSame = symbols.every(s => s === symbols[0]);
             const row1 = symbols[0] === symbols[1] && symbols[1] === symbols[2];
             const row2 = symbols[3] === symbols[4] && symbols[4] === symbols[5];
@@ -5411,8 +5435,8 @@
 
             let winMult = 0;
             if (allSame) {
-                winMult = 50; // Tela Cheia 10x multiplier on 5x base
-                document.querySelectorAll('.slot-symbol-box').forEach(c => c.classList.add('win-pulse'));
+                winMult = isFree ? 100 : 50;
+                document.querySelectorAll('#tigerReelsGrid .slot-symbol-box').forEach(c => c.classList.add('win-pulse'));
             } else {
                 if (row1) { winMult += 5; [0,1,2].forEach(i => document.getElementById(`tigerCell_${i}`)?.classList.add('win-pulse')); }
                 if (row2) { winMult += 5; [3,4,5].forEach(i => document.getElementById(`tigerCell_${i}`)?.classList.add('win-pulse')); }
@@ -5423,22 +5447,45 @@
 
             if (winMult > 0) {
                 const totalWin = bet * winMult;
+                if (statusEl) statusEl.innerText = `O TIGRE SOLTOU A CARTA! +${formatBRL(totalWin)}`;
+                sfx.win();
+                return totalWin;
+            } else {
+                if (statusEl) statusEl.innerText = 'O Tigre aguarda o próximo giro!';
+                return 0;
+            }
+        }
+
+        async function spinFortuneTiger() {
+            if (freeSpinsActive['tiger']) return;
+            const betInput = document.getElementById('tigerBetInput');
+            const bet = parseFloat(betInput ? betInput.value : 15) || 15;
+            if (userData.balance < bet) {
+                showToast('Saldo insuficiente!', 'error');
+                sfx.lose();
+                return;
+            }
+            userData.balance -= bet;
+            addVipExp(bet);
+            updateUI();
+            sfx.spin();
+
+            const totalWin = await executeTigerSpin(bet, false);
+            if (totalWin > 0) {
                 userData.balance += totalWin;
                 addBetHistory('Fortune Tiger', bet, totalWin, '🐯');
                 updateUI();
-                if (statusEl) statusEl.innerText = `O TIGRE SOLTOU A CARTA! +${formatBRL(totalWin)} (${winMult}x)`;
-                if (winMult >= 20) showBigWinOverlay(totalWin, 'TELA CHEIA DO TIGRE!');
-                else { sfx.win(); triggerConfetti(); }
+                if (totalWin >= bet * 10) showBigWinOverlay(totalWin, 'TELA CHEIA DO TIGRE!');
+                else triggerConfetti();
             } else {
                 addBetHistory('Fortune Tiger', bet, 0, '🐯');
-                if (statusEl) statusEl.innerText = 'O Tigre aguarda o próximo giro!';
                 sfx.lose();
             }
             saveUserDataToFirebase();
         }
 
         /* ==========================================================================
-           10. UNIVERSAL 5-REEL SLOTS ENGINE (OX, MOUSE, BUFFALO, BAKERY, CYBER, AZTEC, RA)
+           10. UNIVERSAL SLOTS ENGINE (OX, MOUSE, BUFFALO, BAKERY, CYBER, AZTEC, RA, DOG)
            ========================================================================== */
         const SLOT_THEMES = {
             dog: { name: 'The Dog House', icon: '🐶', symbols: ['🐶', '🦴', '🏠', '🐾', '👑', '💎', '⭐'], gridEl: 'dogReelsGrid', betEl: 'dogBetInput', statusEl: 'dogStatusText', count: 15 },
@@ -5466,103 +5513,57 @@
             }
         }
 
+        async function executeGenericSlotSpin(themeKey, bet, isFree = false) {
+            const t = SLOT_THEMES[themeKey];
+            if (!t) return 0;
+            const isTurbo = slotTurboState[themeKey] || false;
+            const statusEl = document.getElementById(t.statusEl);
+            if (statusEl) statusEl.innerText = isFree ? `⭐ ${t.name} BÔNUS...` : 'Girando rolos...';
+
+            const symbols = [];
+            for (let i = 0; i < t.count; i++) {
+                symbols.push(t.symbols[Math.floor(Math.random() * t.symbols.length)]);
+            }
+
+            for (let i = 0; i < t.count; i++) {
+                const cell = document.getElementById(`${themeKey}Cell_${i}`);
+                if (cell) {
+                    cell.classList.remove('win-pulse', 'cascade-drop');
+                    void cell.offsetWidth;
+                    cell.classList.add('cascade-drop');
+                    cell.innerText = symbols[i];
+                }
+            }
+
+            await new Promise(r => setTimeout(r, isTurbo ? 180 : 450));
+
+            // Check line matching
+            let winMult = 0;
+            const step = t.count === 9 ? 3 : 5;
+            for (let row = 0; row < t.count / step; row++) {
+                const start = row * step;
+                if (symbols[start] === symbols[start + 1] && symbols[start + 1] === symbols[start + 2]) {
+                    winMult += 4;
+                    for (let c = 0; c < 3; c++) document.getElementById(`${themeKey}Cell_${start + c}`)?.classList.add('win-pulse');
+                }
+            }
+
+            if (winMult > 0) {
+                const totalWin = bet * winMult * (isFree ? 2 : 1);
+                if (statusEl) statusEl.innerText = `VITÓRIA: +${formatBRL(totalWin)}!`;
+                sfx.win();
+                return totalWin;
+            } else {
+                if (statusEl) statusEl.innerText = 'Sem combinações.';
+                return 0;
+            }
+        }
+
         async function spinGenericSlot(themeKey) {
+            if (freeSpinsActive[themeKey]) return;
             const t = SLOT_THEMES[themeKey];
             if (!t) return;
-            const bet = parseFloat(document.getElementById(t.betEl).value) || 20;
-            if (userData.balance < bet) {
-                showToast('Saldo insuficiente!', 'error');
-                sfx.lose();
-                return;
-            }
-            userData.balance -= bet;
-            addVipExp(bet);
-            updateUI();
-            sfx.spin();
-
-            const statusEl = document.getElementById(t.statusEl);
-            statusEl.innerText = `${t.name} girando cilindros...`;
-
-            for (let i = 0; i < t.count; i++) {
-                const cell = document.getElementById(`${themeKey}Cell_${i}`);
-                if (cell) cell.classList.add('win-pulse');
-            }
-
-            const results = [];
-            for (let i = 0; i < t.count; i++) {
-                results.push(t.symbols[Math.floor(Math.random() * t.symbols.length)]);
-            }
-
-            for (let i = 0; i < t.count; i++) {
-                const cell = document.getElementById(`${themeKey}Cell_${i}`);
-                if (cell) cell.innerText = results[i];
-            }
-
-            await new Promise(r => setTimeout(r, 600));
-            for (let i = 0; i < t.count; i++) {
-                const cell = document.getElementById(`${themeKey}Cell_${i}`);
-                if (cell) cell.classList.remove('win-pulse');
-            }
-
-            // Matching count logic
-            const counts = {};
-            results.forEach(s => counts[s] = (counts[s] || 0) + 1);
-
-            let mult = 0;
-            let winningSymbol = null;
-            for (const [sym, count] of Object.entries(counts)) {
-                if (count >= 3 && t.count === 9) { mult += count * 0.9; winningSymbol = sym; }
-                if (count >= 4 && t.count === 15) { mult += count * 0.75; winningSymbol = sym; }
-            }
-
-            if (mult > 0) {
-                const totalWin = bet * mult;
-                userData.balance += totalWin;
-                addBetHistory(t.name, bet, totalWin, t.icon);
-                updateUI();
-                statusEl.innerText = `VITÓRIA! Ganhou ${formatBRL(totalWin)}! (${mult.toFixed(1)}x)`;
-
-                if (winningSymbol) {
-                    for (let i = 0; i < t.count; i++) {
-                        const cell = document.getElementById(`${themeKey}Cell_${i}`);
-                        if (cell && cell.innerText === winningSymbol) cell.classList.add('win-pulse');
-                    }
-                }
-
-                if (totalWin >= bet * 5) showBigWinOverlay(totalWin, `${t.name.toUpperCase()} PREMIADO!`);
-                else { sfx.win(); triggerConfetti(); }
-            } else {
-                addBetHistory(t.name, bet, 0, t.icon);
-                statusEl.innerText = 'Sem combinações nesta rodada. Tente de novo!';
-                sfx.lose();
-            }
-            saveUserDataToFirebase();
-        }
-
-                /* ==========================================================================
-           11. NINJA SLOTS 5R
-           ========================================================================== */
-        const NINJA_SYMBOLS = ['🐢', '🍕', '⚔️', '⭐', '🛹', '🥷', '🐀'];
-        function initNinjaSlots() {
-            for (let r = 0; r < 5; r++) {
-                const el = document.getElementById(`slotReel${r}`);
-                if (!el) continue;
-                el.innerHTML = '';
-                for (let i = 0; i < 3; i++) {
-                    const sym = document.createElement('div');
-                    sym.style.height = '80px';
-                    sym.style.display = 'flex';
-                    sym.style.alignItems = 'center';
-                    sym.style.justifyContent = 'center';
-                    sym.style.fontSize = '36px';
-                    sym.innerText = NINJA_SYMBOLS[Math.floor(Math.random() * NINJA_SYMBOLS.length)];
-                    el.appendChild(sym);
-                }
-            }
-        }
-
-        async function spinNinjaSlots() {
-            const betInput = document.getElementById('ninjaBetInput') || document.getElementById('slotBetInput');
+            const betInput = document.getElementById(t.betEl);
             const bet = parseFloat(betInput ? betInput.value : 20) || 20;
             if (userData.balance < bet) {
                 showToast('Saldo insuficiente!', 'error');
@@ -5574,49 +5575,107 @@
             updateUI();
             sfx.spin();
 
+            const totalWin = await executeGenericSlotSpin(themeKey, bet, false);
+            if (totalWin > 0) {
+                userData.balance += totalWin;
+                addBetHistory(t.name, bet, totalWin, t.icon);
+                updateUI();
+                if (totalWin >= bet * 5) showBigWinOverlay(totalWin, 'SUPER VITÓRIA!');
+                else triggerConfetti();
+            } else {
+                addBetHistory(t.name, bet, 0, t.icon);
+                sfx.lose();
+            }
+            saveUserDataToFirebase();
+        }
+
+        function spinDogHouse() {
+            spinGenericSlot('dog');
+        }
+
+        /* ==========================================================================
+           11. NINJA SLOTS 5R
+           ========================================================================== */
+        const NINJA_SYMBOLS = ['🐢', '🍕', '⚔️', '🛹', '🥷', '🐀', '⭐'];
+
+        function initNinjaSlots() {
+            const grid = document.getElementById('ninjaReelsGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let i = 0; i < 15; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'slot-symbol-box';
+                cell.id = `ninjaCell_${i}`;
+                cell.innerText = NINJA_SYMBOLS[Math.floor(Math.random() * (NINJA_SYMBOLS.length - 1))];
+                grid.appendChild(cell);
+            }
+        }
+
+        async function executeNinjaSpin(bet, isFree = false) {
             const isTurbo = slotTurboState['slot'] || false;
-            const statusEl = document.getElementById('slotStatusText');
-            if (statusEl) statusEl.innerText = 'Ninja desferindo golpes nos cilindros...';
+            const statusEl = document.getElementById('ninjaStatusText');
+            if (statusEl) statusEl.innerText = isFree ? '🥷 NINJA FREE SPINS...' : 'Ninjas atacando os rolos...';
 
-            const reelResults = [];
-            for (let r = 0; r < 5; r++) {
-                const el = document.getElementById(`slotReel${r}`);
-                if (!el) continue;
-                el.innerHTML = '';
-                const sym = NINJA_SYMBOLS[Math.floor(Math.random() * NINJA_SYMBOLS.length)];
-                reelResults.push(sym);
-                const symEl = document.createElement('div');
-                symEl.className = 'cascade-drop';
-                symEl.style.height = '240px';
-                symEl.style.display = 'flex';
-                symEl.style.alignItems = 'center';
-                symEl.style.justifyContent = 'center';
-                symEl.style.fontSize = '50px';
-                symEl.innerText = sym;
-                el.appendChild(symEl);
+            const symbols = [];
+            for (let i = 0; i < 15; i++) {
+                symbols.push(NINJA_SYMBOLS[Math.floor(Math.random() * NINJA_SYMBOLS.length)]);
             }
 
-            await new Promise(r => setTimeout(r, isTurbo ? 180 : 480));
-
-            const counts = {};
-            reelResults.forEach(s => counts[s] = (counts[s] || 0) + 1);
-
-            let mult = 0;
-            for (const [sym, count] of Object.entries(counts)) {
-                if (count >= 3) mult += (count === 5 ? 30 : count === 4 ? 10 : 3.5);
+            for (let i = 0; i < 15; i++) {
+                const cell = document.getElementById(`ninjaCell_${i}`);
+                if (cell) {
+                    cell.classList.remove('win-pulse', 'cascade-drop');
+                    void cell.offsetWidth;
+                    cell.classList.add('cascade-drop');
+                    cell.innerText = symbols[i];
+                }
             }
 
-            if (mult > 0) {
-                const totalWin = bet * mult;
+            await new Promise(r => setTimeout(r, isTurbo ? 180 : 450));
+
+            let winMult = 0;
+            for (let r = 0; r < 3; r++) {
+                const st = r * 5;
+                if (symbols[st] === symbols[st + 1] && symbols[st + 1] === symbols[st + 2]) {
+                    winMult += 5;
+                    for (let c = 0; c < 3; c++) document.getElementById(`ninjaCell_${st + c}`)?.classList.add('win-pulse');
+                }
+            }
+
+            if (winMult > 0) {
+                const totalWin = bet * winMult * (isFree ? 2.5 : 1);
+                if (statusEl) statusEl.innerText = `ATAQUE NINJA: +${formatBRL(totalWin)}!`;
+                sfx.win();
+                return totalWin;
+            } else {
+                if (statusEl) statusEl.innerText = 'Os Ninjas sumiram nas sombras.';
+                return 0;
+            }
+        }
+
+        async function spinNinjaSlots() {
+            if (freeSpinsActive['slot']) return;
+            const betInput = document.getElementById('ninjaBetInput');
+            const bet = parseFloat(betInput ? betInput.value : 10) || 10;
+            if (userData.balance < bet) {
+                showToast('Saldo insuficiente!', 'error');
+                sfx.lose();
+                return;
+            }
+            userData.balance -= bet;
+            addVipExp(bet);
+            updateUI();
+            sfx.spin();
+
+            const totalWin = await executeNinjaSpin(bet, false);
+            if (totalWin > 0) {
                 userData.balance += totalWin;
                 addBetHistory('Ninja Slots', bet, totalWin, '🥷');
                 updateUI();
-                if (statusEl) statusEl.innerText = `GOLPE CRÍTICO! Ganhou ${formatBRL(totalWin)}! (${mult}x)`;
-                if (totalWin >= bet * 5) showBigWinOverlay(totalWin, 'MESTRE NINJA!');
-                else { sfx.win(); triggerConfetti(); }
+                if (totalWin >= bet * 5) showBigWinOverlay(totalWin, 'ATAQUE NINJA!');
+                else triggerConfetti();
             } else {
                 addBetHistory('Ninja Slots', bet, 0, '🥷');
-                if (statusEl) statusEl.innerText = 'O golpe falhou. Gire novamente!';
                 sfx.lose();
             }
             saveUserDataToFirebase();
