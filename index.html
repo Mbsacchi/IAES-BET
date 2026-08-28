@@ -1653,7 +1653,60 @@
                         </div>
                         <div>
                             <div class="section-header"><div class="section-title">🏆 Ranking Global</div></div>
-                            <div id="lobbyLeaderboardContainer">Carregando ranking...</div>
+                                                        <div id="lobbyLeaderboardContainer">
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span style="font-size: 16px; font-weight: 900; color: #facc15; width: 24px; text-align: center;">🥇</span>
+                                            <div>
+                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">Kenjy</div>
+                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 5</div>
+                                            </div>
+                                        </div>
+                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 48.500,00</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span style="font-size: 16px; font-weight: 900; color: #cbd5e1; width: 24px; text-align: center;">🥈</span>
+                                            <div>
+                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">Brunao_VIP</div>
+                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 4</div>
+                                            </div>
+                                        </div>
+                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 31.200,00</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span style="font-size: 16px; font-weight: 900; color: #d97706; width: 24px; text-align: center;">🥉</span>
+                                            <div>
+                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">Rodrigo_777</div>
+                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 3</div>
+                                            </div>
+                                        </div>
+                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 18.450,00</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span style="font-size: 16px; font-weight: 900; color: #94a3b8; width: 24px; text-align: center;">4º</span>
+                                            <div>
+                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">Lucas_Apostas</div>
+                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 2</div>
+                                            </div>
+                                        </div>
+                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 7.800,00</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #111728; border: 1.5px solid var(--border); border-radius: var(--radius-sm);">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span style="font-size: 16px; font-weight: 900; color: #94a3b8; width: 24px; text-align: center;">5º</span>
+                                            <div>
+                                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">admin</div>
+                                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL 1</div>
+                                            </div>
+                                        </div>
+                                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">R$ 1.000,00</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3696,6 +3749,7 @@
             renderDailyQuests();
             renderBattlePass();
             renderLevelRewards();
+            if (typeof renderLeaderboardLobby === 'function') renderLeaderboardLobby();
         }
 
         function addVipExp(amount) {
@@ -4696,90 +4750,93 @@
 
     </script>
 
-        /* ==========================================================================
+                /* ==========================================================================
            10. GLOBAL REAL-TIME LEADERBOARD
            ========================================================================== */
-        async function renderLeaderboardLobby() {
+        function renderLeaderboardLobby() {
             const container = document.getElementById('lobbyLeaderboardContainer');
             if (!container) return;
 
-            let players = [];
+            function updateLeaderboardDOM(playerList) {
+                const list = [...playerList];
+                if (userData && userData.username) {
+                    const curIdx = list.findIndex(p => p.name.toLowerCase() === userData.username.toLowerCase());
+                    if (curIdx > -1) {
+                        list[curIdx].balance = userData.balance || 0;
+                        list[curIdx].vipLvl = userData.vipLevel || 1;
+                    } else {
+                        list.push({
+                            name: userData.username,
+                            balance: userData.balance || 1000,
+                            vipLvl: userData.vipLevel || 1,
+                            avatar: userData.equippedAvatar || 'avatar_tiger'
+                        });
+                    }
+                }
+
+                list.sort((a, b) => (parseFloat(b.balance) || 0) - (parseFloat(a.balance) || 0));
+
+                const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
+                const colors = ['#facc15', '#cbd5e1', '#d97706', '#94a3b8', '#94a3b8'];
+
+                let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                list.slice(0, 5).forEach((p, idx) => {
+                    const isCurrent = (userData && userData.username && p.name.toLowerCase() === userData.username.toLowerCase());
+                    html += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: ${isCurrent ? 'rgba(0,231,1,0.08)' : '#111728'}; border: 1.5px solid ${isCurrent ? 'var(--brand-green)' : 'var(--border)'}; border-radius: var(--radius-sm); transition: all 0.2s;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 16px; font-weight: 900; color: ${colors[idx]}; width: 24px; text-align: center;">${medals[idx]}</span>
+                                <div>
+                                    <div style="font-size: 13.5px; font-weight: 800; color: #fff;">${p.name} ${isCurrent ? '<span style="font-size: 10px; color: var(--brand-green); font-weight:900;">(VOCÊ)</span>' : ''}</div>
+                                    <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL ${p.vipLvl || 1}</div>
+                                </div>
+                            </div>
+                            <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">
+                                ${formatBRL(p.balance || 0)}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+
+            const defaultHighRollers = [
+                { name: 'Kenjy', balance: 48500.00, vipLvl: 5, avatar: 'avatar_dragon' },
+                { name: 'Brunao_VIP', balance: 31200.00, vipLvl: 4, avatar: 'avatar_crown' },
+                { name: 'Rodrigo_777', balance: 18450.00, vipLvl: 3, avatar: 'avatar_tiger' },
+                { name: 'Lucas_Apostas', balance: 7800.00, vipLvl: 2, avatar: 'avatar_star' },
+                { name: 'admin', balance: 1000.00, vipLvl: 1, avatar: 'avatar_crown' }
+            ];
+            updateLeaderboardDOM(defaultHighRollers);
+
             var curDb = window.db || (typeof db !== 'undefined' ? db : null);
             if (curDb) {
-                try {
-                    const snap = await curDb.collection('users').get();
+                curDb.collection('users').get().then(snap => {
+                    let livePlayers = [];
                     snap.forEach(doc => {
                         const d = doc.data();
                         const bal = parseFloat(d.balance) || 0;
                         const name = d.username || d.displayName || (d.email ? d.email.split('@')[0] : 'Jogador VIP');
-                        players.push({
+                        livePlayers.push({
                             name: name,
                             balance: bal,
                             vipLvl: d.vipLevel || 1,
                             avatar: d.equippedAvatar || 'avatar_tiger'
                         });
                     });
-                } catch(e) {
-                    console.warn('Leaderboard load error:', e);
-                }
+                    if (livePlayers.length > 0) {
+                        defaultHighRollers.forEach(dp => {
+                            if (!livePlayers.some(p => p.name.toLowerCase() === dp.name.toLowerCase())) {
+                                livePlayers.push(dp);
+                            }
+                        });
+                        updateLeaderboardDOM(livePlayers);
+                    }
+                }).catch(err => {
+                    console.warn('Leaderboard async fetch:', err);
+                });
             }
-
-            // High roller backup list
-            const defaults = [
-                { name: 'Kenjy', balance: 48500.00, vipLvl: 5, avatar: 'avatar_dragon' },
-                { name: 'Brunao_VIP', balance: 31200.00, vipLvl: 4, avatar: 'avatar_crown' },
-                { name: 'Rodrigo_777', balance: 18450.00, vipLvl: 3, avatar: 'avatar_tiger' },
-                { name: 'admin', balance: 1000.00, vipLvl: 5, avatar: 'avatar_crown' },
-                { name: 'Lucas_Apostas', balance: 7800.00, vipLvl: 2, avatar: 'avatar_star' }
-            ];
-            defaults.forEach(dp => {
-                if (!players.some(p => p.name.toLowerCase() === dp.name.toLowerCase())) {
-                    players.push(dp);
-                }
-            });
-
-            // Ensure current user is in leaderboard
-            if (userData && userData.username) {
-                const curIdx = players.findIndex(p => p.name.toLowerCase() === userData.username.toLowerCase());
-                if (curIdx > -1) {
-                    players[curIdx].balance = userData.balance || 0;
-                    players[curIdx].vipLvl = userData.vipLevel || 1;
-                } else {
-                    players.push({
-                        name: userData.username,
-                        balance: userData.balance || 1000,
-                        vipLvl: userData.vipLevel || 1,
-                        avatar: userData.equippedAvatar || 'avatar_tiger'
-                    });
-                }
-            }
-
-            // Sort descending
-            players.sort((a, b) => b.balance - a.balance);
-
-            const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
-            const colors = ['#facc15', '#cbd5e1', '#d97706', '#94a3b8', '#94a3b8'];
-
-            let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
-            players.slice(0, 5).forEach((p, idx) => {
-                const isCurrent = (userData && userData.username && p.name.toLowerCase() === userData.username.toLowerCase());
-                html += `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: ${isCurrent ? 'rgba(0,231,1,0.08)' : '#111728'}; border: 1.5px solid ${isCurrent ? 'var(--brand-green)' : 'var(--border)'}; border-radius: var(--radius-sm);">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 16px; font-weight: 900; color: ${colors[idx]}; width: 24px; text-align: center;">${medals[idx]}</span>
-                            <div>
-                                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">${p.name} ${isCurrent ? '<span style="font-size: 10px; color: var(--brand-green); font-weight:900;">(VOCÊ)</span>' : ''}</div>
-                                <div style="font-size: 10.5px; font-weight: 700; color: var(--brand-gold);">VIP NÍVEL ${p.vipLvl}</div>
-                            </div>
-                        </div>
-                        <div style="font-family: var(--font-num); font-size: 14.5px; font-weight: 900; color: var(--brand-green);">
-                            ${formatBRL(p.balance)}
-                        </div>
-                    </div>
-                `;
-            });
-            html += '</div>';
-            container.innerHTML = html;
         }
     <script>
         var auth = window.auth || null;
