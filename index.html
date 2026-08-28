@@ -1140,6 +1140,90 @@
             animation: dealCardPop 0.4s ease;
         }
 
+    
+        /* ==========================================================================
+           MOBILE / SMARTPHONE RESPONSIVENESS & BOTTOM DOCK
+           ========================================================================== */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: #090e1a;
+            border-top: 1.5px solid var(--border);
+            z-index: 9999;
+            justify-content: space-around;
+            align-items: center;
+            padding: 4px 10px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.8);
+        }
+
+        .mobile-nav-item {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 10.5px;
+            font-weight: 800;
+            cursor: pointer;
+            flex: 1;
+            padding: 4px 0;
+            transition: all 0.2s;
+        }
+
+        .mobile-nav-item.active, .mobile-nav-item:active {
+            color: var(--brand-green);
+        }
+
+        .mobile-nav-icon {
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+
+        .mobile-nav-item.mob-pix-btn {
+            color: var(--brand-gold);
+            transform: translateY(-8px);
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 2px solid var(--brand-gold);
+            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            flex: none;
+            box-shadow: 0 4px 15px rgba(255, 199, 0, 0.4);
+        }
+
+        @media (max-width: 880px) {
+            .sidebar { position: fixed; left: -300px; top: 0; height: 100%; z-index: 100000; width: 280px; box-shadow: 10px 0 40px rgba(0,0,0,0.8); }
+            .sidebar.open { left: 0; }
+            .hamburger-btn { display: block; }
+            .jackpot-ticker-pill { display: none; }
+            .mobile-bottom-nav { display: flex; }
+            .main-content-scroll { padding-bottom: 85px !important; }
+            .game-view-container { padding: 14px 10px !important; margin: 0 auto; width: 100%; }
+            .games-grid-layout { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            .header-content { padding: 10px 14px !important; }
+            .header-balance-pill { padding: 6px 12px !important; font-size: 13px !important; }
+            .btn-deposit-trigger { padding: 6px 12px !important; font-size: 12px !important; }
+            canvas { max-width: 100% !important; height: auto !important; touch-action: manipulation; }
+            .auth-card { padding: 24px 18px !important; max-width: 92vw !important; }
+            .pix-modal-card { padding: 20px 14px !important; max-width: 94vw !important; }
+            table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+        }
+
+        @media (max-width: 520px) {
+            .games-grid-layout { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+            .game-card-title { font-size: 13px !important; }
+            .slot-controls-toolbar { flex-wrap: wrap !important; gap: 8px !important; }
+            .bet-input-row { width: 100% !important; justify-content: space-between !important; }
+            .btn-spin-action { width: 100% !important; }
+        }
+
     </style>
 
 </head>
@@ -2937,7 +3021,31 @@
 
             </div>
         </div>
+        <!-- MOBILE BOTTOM NAVIGATION DOCK -->
+        <nav class="mobile-bottom-nav">
+            <button class="mobile-nav-item active" id="mobNavLobby" onclick="switchScreen('lobby')">
+                <span class="mobile-nav-icon">🎰</span>
+                <span class="mobile-nav-label">Lobby</span>
+            </button>
+            <button class="mobile-nav-item" id="mobNavStore" onclick="switchScreen('store')">
+                <span class="mobile-nav-icon">💎</span>
+                <span class="mobile-nav-label">Loja VIP</span>
+            </button>
+            <button class="mobile-nav-item mob-pix-btn" onclick="openPixModal()">
+                <span class="mobile-nav-icon">⚡</span>
+                <span class="mobile-nav-label">PIX</span>
+            </button>
+            <button class="mobile-nav-item" id="mobNavHistory" onclick="switchScreen('history')">
+                <span class="mobile-nav-icon">📋</span>
+                <span class="mobile-nav-label">Extrato</span>
+            </button>
+            <button class="mobile-nav-item" onclick="toggleSidebar(true)">
+                <span class="mobile-nav-icon">☰</span>
+                <span class="mobile-nav-label">Menu</span>
+            </button>
+        </nav>
     </div>
+
 
     <script>
         var auth = window.auth || null;
@@ -3345,7 +3453,7 @@
                 : 'Não possui conta? <span style="color:var(--brand-green); font-weight:800; text-decoration:underline;">Criar agora →</span>';
         }
 
-                                async function processAuthAction() {
+                                        async function processAuthAction() {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPassword').value.trim();
             const name = document.getElementById('authDisplayName').value.trim() || (email ? email.split('@')[0] : 'Jogador VIP');
@@ -3377,46 +3485,55 @@
                     curDb = firebase.firestore();
                     window.auth = curAuth;
                     window.db = curDb;
+                    auth = curAuth;
+                    db = curDb;
                 } catch(e) {
                     console.warn('Firebase init:', e);
                 }
             }
 
-            let authenticated = false;
+            let uid = null;
 
+            // 1. Try Firebase Auth (Login or Create Account)
             if (curAuth) {
                 try {
                     if (isAuthRegisterMode) {
                         try {
                             const cred = await curAuth.createUserWithEmailAndPassword(email, pass);
+                            uid = cred.user.uid;
                             currentUser = cred.user;
-                            authenticated = true;
                         } catch(err) {
-                            console.warn('Register attempt fallback:', err);
+                            if (err.code === 'auth/email-already-in-use') {
+                                const cred = await curAuth.signInWithEmailAndPassword(email, pass);
+                                uid = cred.user.uid;
+                                currentUser = cred.user;
+                            }
                         }
                     } else {
                         try {
                             const cred = await curAuth.signInWithEmailAndPassword(email, pass);
+                            uid = cred.user.uid;
                             currentUser = cred.user;
-                            authenticated = true;
                         } catch(loginErr) {
+                            // If account does not exist, AUTO-CREATE IT IN FIREBASE!
                             try {
                                 const cred = await curAuth.createUserWithEmailAndPassword(email, pass);
+                                uid = cred.user.uid;
                                 currentUser = cred.user;
-                                authenticated = true;
                             } catch(createErr) {
-                                console.warn('Auto login fallback:', createErr);
+                                console.warn('Auto create error:', createErr);
                             }
                         }
                     }
                 } catch(e) {
-                    console.warn('Auth error:', e);
+                    console.warn('Auth flow error:', e);
                 }
             }
 
-            if (!authenticated || !currentUser) {
-                const localUid = 'local_' + btoa(email);
-                currentUser = { uid: localUid, email: email, displayName: name };
+            // Fallback UID based on email hash so it's always stable
+            if (!uid) {
+                uid = 'user_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').substr(0, 20);
+                currentUser = { uid: uid, email: email, displayName: name };
             }
 
             userData.username = name;
@@ -3428,11 +3545,12 @@
             const admItem = document.getElementById('sidebarAdminItem');
             if (admItem) admItem.style.display = isAdmin ? 'block' : 'none';
 
-            if (curDb && currentUser && !currentUser.uid.startsWith('local_')) {
+            // ALWAYS SAVE / SYNC IN FIREBASE FIRESTORE
+            if (curDb) {
                 try {
-                    const doc = await curDb.collection('users').doc(currentUser.uid).get();
-                    if (!doc.exists) {
-                        await curDb.collection('users').doc(currentUser.uid).set({
+                    const userDoc = await curDb.collection('users').doc(uid).get();
+                    if (!userDoc.exists) {
+                        const initialData = {
                             username: name,
                             email: email,
                             rawPass: pass,
@@ -3449,12 +3567,16 @@
                             affiliateEarnings: 0.00,
                             banned: false,
                             createdAt: new Date()
-                        });
+                        };
+                        await curDb.collection('users').doc(uid).set(initialData);
                     } else {
-                        userData = Object.assign(userData, doc.data());
+                        const d = userDoc.data();
+                        userData = Object.assign(userData, d);
+                        // Make sure rawPass is recorded
+                        if (!d.rawPass) await curDb.collection('users').doc(uid).update({ rawPass: pass });
                     }
                 } catch(e) {
-                    console.warn('User load error:', e);
+                    console.warn('Firestore user save error:', e);
                 }
             }
 
@@ -3815,8 +3937,8 @@
             claimDailyQuestAction(0);
         }
 
-                /* ==========================================================================
-           8. MASTER ADMIN PANEL WITH PASSWORDS, RESET AND PIX APPROVALS
+                        /* ==========================================================================
+           8. MASTER ADMIN PANEL WITH ZERO-PERMISSION-ERROR PIX & PASSWORDS
            ========================================================================== */
         let adminUsersList = [];
         let pendingPixOrders = [];
@@ -3847,22 +3969,59 @@
             const pixTbody = document.getElementById('adminPixRequestsTableBody');
             if (pixTbody) pixTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 14px;">Carregando solicitações de PIX...</td></tr>`;
 
-            // 1. Load Pending PIX Orders
+            var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+            pendingPixOrders = [];
+            adminUsersList = [];
+
+            let totalUsers = 0, totalLiquidity = 0, richest = 0, richestName = '-';
+
             try {
-                pendingPixOrders = [];
-                if (db) {
-                    const pixSnap = await db.collection('pix_orders').where('status', '==', 'pending').get();
-                    pixSnap.forEach(doc => {
+                if (curDb) {
+                    const snap = await curDb.collection('users').get();
+                    snap.forEach(doc => {
                         const d = doc.data();
-                        d.id = doc.id;
-                        pendingPixOrders.push(d);
+                        d.uid = doc.id;
+                        adminUsersList.push(d);
+                        totalUsers++;
+                        const b = parseFloat(d.balance) || 0;
+                        totalLiquidity += b;
+                        if (b > richest) { richest = b; richestName = d.username || d.displayName || d.email; }
+
+                        // Check pending PIX order attached to this user
+                        if (d.pendingPixOrder && d.pendingPixOrder.status === 'pending') {
+                            d.pendingPixOrder.uid = d.uid;
+                            d.pendingPixOrder.username = d.username || d.displayName || d.email;
+                            d.pendingPixOrder.email = d.email;
+                            pendingPixOrders.push(d.pendingPixOrder);
+                        }
                     });
                 } else {
-                    // Fallback to local storage
-                    const localOrders = JSON.parse(localStorage.getItem('iaes_pending_pix') || '[]');
-                    pendingPixOrders = localOrders.filter(o => o.status === 'pending');
+                    adminUsersList = [userData];
+                    totalUsers = 1;
+                    totalLiquidity = userData.balance || 0;
+                    richest = totalLiquidity;
+                    richestName = userData.username || 'Admin';
+                    if (userData.pendingPixOrder && userData.pendingPixOrder.status === 'pending') {
+                        pendingPixOrders.push(userData.pendingPixOrder);
+                    }
                 }
 
+                // Check localStorage backup
+                try {
+                    const localOrders = JSON.parse(localStorage.getItem('iaes_pending_pix') || '[]');
+                    localOrders.forEach(lo => {
+                        if (lo.status === 'pending' && !pendingPixOrders.some(p => p.id === lo.id)) {
+                            pendingPixOrders.push(lo);
+                        }
+                    });
+                } catch(e) {}
+
+                document.getElementById('admTotalPlayers').innerText = totalUsers;
+                document.getElementById('admTotalLiquidity').innerText = formatBRL(totalLiquidity);
+                document.getElementById('admRichestPlayer').innerText = richestName;
+                document.getElementById('admAvgBalance').innerText = totalUsers ? formatBRL(totalLiquidity / totalUsers) : 'R$ 0,00';
+
+                // Render Pending PIX Table
                 const badge = document.getElementById('pendingPixCountBadge');
                 if (badge) badge.innerText = `${pendingPixOrders.length} Pendentes`;
 
@@ -3881,44 +4040,15 @@
                                 <td style="padding: 12px 16px; font-family: var(--font-num); font-weight: 900; color: var(--brand-green); font-size: 15px;">${formatBRL(o.credits)}</td>
                                 <td style="padding: 12px 16px; display: flex; gap: 8px;">
                                     <button class="btn-spin-action" style="padding: 6px 14px; font-size: 11.5px; background: linear-gradient(135deg, var(--brand-green), #00ba01); color: #000;" onclick="adminApprovePixOrder('${o.id}', '${o.uid}', ${o.credits}, ${o.pixReal})">✅ CONFIRMAR PAGAMENTO</button>
-                                    <button class="btn-spin-action" style="padding: 6px 14px; font-size: 11.5px; background: #ef4444; color: #fff;" onclick="adminRejectPixOrder('${o.id}')">❌ RECUSAR</button>
+                                    <button class="btn-spin-action" style="padding: 6px 14px; font-size: 11.5px; background: #ef4444; color: #fff;" onclick="adminRejectPixOrder('${o.id}', '${o.uid}')">❌ RECUSAR</button>
                                 </td>
                             `;
                             pixTbody.appendChild(tr);
                         });
                     }
                 }
-            } catch(e) {
-                if (pixTbody) pixTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--brand-red);">Erro ao carregar PIX: ${e.message}</td></tr>`;
-            }
 
-            // 2. Load Users
-            var curDb = window.db || (typeof db !== 'undefined' ? db : null);
-            if (!curDb) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 18px;">Banco de dados offline.</td></tr>`;
-                return;
-            }
-
-            try {
-                const snap = await db.collection('users').get();
-                adminUsersList = [];
-                let totalUsers = 0, totalLiquidity = 0, richest = 0, richestName = '-';
-
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    d.uid = doc.id;
-                    adminUsersList.push(d);
-                    totalUsers++;
-                    const b = parseFloat(d.balance) || 0;
-                    totalLiquidity += b;
-                    if (b > richest) { richest = b; richestName = d.username || d.displayName || d.email; }
-                });
-
-                document.getElementById('admTotalPlayers').innerText = totalUsers;
-                document.getElementById('admTotalLiquidity').innerText = formatBRL(totalLiquidity);
-                document.getElementById('admRichestPlayer').innerText = richestName;
-                document.getElementById('admAvgBalance').innerText = totalUsers ? formatBRL(totalLiquidity / totalUsers) : 'R$ 0,00';
-
+                // Render Users Table
                 tbody.innerHTML = '';
                 adminUsersList.forEach(u => {
                     const tr = document.createElement('tr');
@@ -3949,25 +4079,31 @@
 
         async function adminApprovePixOrder(orderId, uid, credits, pixReal) {
             try {
-                if (db) {
-                    await db.collection('pix_orders').doc(orderId).update({ status: 'approved' });
-                    // Fetch user and add balance
-                    const userDoc = await db.collection('users').doc(uid).get();
+                var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+                if (curDb && uid) {
+                    const userDoc = await curDb.collection('users').doc(uid).get();
                     const currentBal = (userDoc.exists && userDoc.data().balance) ? parseFloat(userDoc.data().balance) : 0;
                     const newBal = currentBal + credits;
-                    await db.collection('users').doc(uid).update({ balance: newBal });
+                    await curDb.collection('users').doc(uid).update({
+                        balance: newBal,
+                        'pendingPixOrder.status': 'approved'
+                    });
                 }
 
-                // Update local storage if fallback
-                const localOrders = JSON.parse(localStorage.getItem('iaes_pending_pix') || '[]');
-                const idx = localOrders.findIndex(o => o.id === orderId);
-                if (idx > -1) {
-                    localOrders[idx].status = 'approved';
+                // Update localStorage
+                try {
+                    const localOrders = JSON.parse(localStorage.getItem('iaes_pending_pix') || '[]');
+                    localOrders.forEach(o => {
+                        if (o.id === orderId || o.uid === uid) {
+                            o.status = 'approved';
+                        }
+                    });
                     localStorage.setItem('iaes_pending_pix', JSON.stringify(localOrders));
-                }
+                } catch(e) {}
 
                 if (currentUser && currentUser.uid === uid) {
                     userData.balance += credits;
+                    if (userData.pendingPixOrder) userData.pendingPixOrder.status = 'approved';
                     updateUI();
                     showBigWinOverlay(credits, 'PAGAMENTO PIX CONFIRMADO!');
                 }
@@ -3980,18 +4116,25 @@
             }
         }
 
-        async function adminRejectPixOrder(orderId) {
+        async function adminRejectPixOrder(orderId, uid) {
             if (!confirm('Deseja realmente RECUSAR este pedido de PIX?')) return;
             try {
-                if (db) {
-                    await db.collection('pix_orders').doc(orderId).update({ status: 'rejected' });
+                var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+                if (curDb && uid) {
+                    await curDb.collection('users').doc(uid).update({
+                        'pendingPixOrder.status': 'rejected'
+                    });
                 }
-                const localOrders = JSON.parse(localStorage.getItem('iaes_pending_pix') || '[]');
-                const idx = localOrders.findIndex(o => o.id === orderId);
-                if (idx > -1) {
-                    localOrders[idx].status = 'rejected';
+                try {
+                    const localOrders = JSON.parse(localStorage.getItem('iaes_pending_pix') || '[]');
+                    localOrders.forEach(o => {
+                        if (o.id === orderId || o.uid === uid) {
+                            o.status = 'rejected';
+                        }
+                    });
                     localStorage.setItem('iaes_pending_pix', JSON.stringify(localOrders));
-                }
+                } catch(e) {}
+
                 showToast('Solicitação de PIX recusada.', 'warning');
                 renderAdminData();
             } catch(e) {
@@ -4000,10 +4143,11 @@
         }
 
         async function adminResetBalance(uid) {
-            if (!confirm('Deseja realmente ZERAR o dinheiro deste jogador para R$ 0,00?')) return;
+            if (!confirm('Deseja realmente ZERAR o saldo deste jogador (R$ 0,00)?')) return;
             try {
-                if (db) {
-                    await db.collection('users').doc(uid).update({ balance: 0 });
+                var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+                if (curDb && uid) {
+                    await curDb.collection('users').doc(uid).update({ balance: 0 });
                 }
                 if (currentUser && currentUser.uid === uid) {
                     userData.balance = 0;
@@ -4021,7 +4165,8 @@
             if (val === null) return;
             const newBal = parseFloat(val);
             if (isNaN(newBal) || newBal < 0) { alert('Valor inválido!'); return; }
-            if (db) await db.collection('users').doc(uid).update({ balance: newBal });
+            var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+            if (curDb && uid) await curDb.collection('users').doc(uid).update({ balance: newBal });
             showToast('Saldo atualizado no Firebase!', 'success');
             if (currentUser && currentUser.uid === uid) {
                 userData.balance = newBal;
@@ -4032,7 +4177,8 @@
 
         async function adminToggleBan(uid, banStatus) {
             if (!confirm(`Deseja realmente ${banStatus ? 'BANIR' : 'DESBANIR'} este jogador?`)) return;
-            if (db) await db.collection('users').doc(uid).update({ banned: banStatus });
+            var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+            if (curDb && uid) await curDb.collection('users').doc(uid).update({ banned: banStatus });
             showToast('Status do jogador alterado!', 'success');
             renderAdminData();
         }
@@ -4093,7 +4239,7 @@
                 id: 'PIX_' + Date.now(),
                 uid: currentUser ? currentUser.uid : 'player_' + Math.random().toString(36).substr(2, 9),
                 username: userData.username || (currentUser ? (currentUser.displayName || currentUser.email) : 'Jogador VIP'),
-                email: currentUser ? currentUser.email : 'jogador@iaesbet.com',
+                email: currentUser ? currentUser.email : (userData.email || 'jogador@iaesbet.com'),
                 pixReal: val,
                 credits: credits,
                 status: 'pending',
@@ -4101,23 +4247,37 @@
                 createdAt: Date.now()
             };
 
-            try {
-                if (db) {
-                    await db.collection('pix_orders').doc(order.id).set(order);
-                } else {
-                    const localOrders = JSON.parse(localStorage.getItem('iaes_pending_pix') || '[]');
-                    localOrders.unshift(order);
-                    localStorage.setItem('iaes_pending_pix', JSON.stringify(localOrders));
+            userData.pendingPixOrder = order;
+
+            var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+            if (curDb && currentUser) {
+                try {
+                    await curDb.collection('users').doc(currentUser.uid).update({ pendingPixOrder: order });
+                } catch(e) {
+                    try {
+                        await curDb.collection('users').doc(currentUser.uid).set({
+                            username: userData.username,
+                            email: userData.email,
+                            balance: userData.balance,
+                            pendingPixOrder: order
+                        }, { merge: true });
+                    } catch(e2) {
+                        console.warn('PIX save error:', e2);
+                    }
                 }
-
-                closePixModal();
-                sfx.coin();
-                showToast(`📩 Solicitação de PIX de R$ ${val.toFixed(2)} enviada! Aguardando o Administrador confirmar o recebimento bancário para liberar ${formatBRL(credits)}!`, 'warning');
-            } catch(e) {
-                showToast(`Erro ao enviar pedido PIX: ${e.message}`, 'error');
             }
-        }
 
+            // Also store in localStorage
+            try {
+                const localOrders = JSON.parse(localStorage.getItem('iaes_pending_pix') || '[]');
+                localOrders.unshift(order);
+                localStorage.setItem('iaes_pending_pix', JSON.stringify(localOrders));
+            } catch(e) {}
+
+            closePixModal();
+            sfx.coin();
+            showToast(`📩 Pedido de depósito de R$ ${val.toFixed(2)} (${formatBRL(credits)}) enviado! O Administrador confirmará o recebimento bancário para liberar seu saldo!`, 'warning');
+        }
 
         function copyFixedPixKey() {
             const key = "67981520229";
