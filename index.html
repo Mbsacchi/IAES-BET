@@ -1290,14 +1290,21 @@
         </div>
     </div>
 
-        <!-- ================= AUTH SECTION ================= -->
+            <!-- ================= AUTH SECTION ================= -->
     <section id="authSection">
         <div class="auth-card">
             <h1 class="brand-logo-text">IAES <span>BET</span></h1>
             <div class="auth-security-badge">🔒 Acesso Criptografado Firebase</div>
-            <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 24px; font-weight: 600;" id="authSubtitle">Crie ou acesse sua conta VIP protegida</p>
 
-            <div class="auth-form-group" id="groupDisplayName" style="display: block;">
+            <!-- Tab Switcher: ENTRAR vs CRIAR CONTA -->
+            <div style="display: flex; background: #070a14; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 4px; margin-bottom: 20px;">
+                <button type="button" id="tabAuthLogin" style="flex: 1; padding: 10px; background: rgba(0,231,1,0.15); border: 1.5px solid var(--brand-green); border-radius: 8px; color: var(--brand-green); font-family: var(--font-head); font-size: 13px; font-weight: 900; cursor: pointer; transition: all 0.2s;" onclick="setAuthMode(false)">FAZER LOGIN</button>
+                <button type="button" id="tabAuthRegister" style="flex: 1; padding: 10px; background: transparent; border: 1.5px solid transparent; border-radius: 8px; color: var(--text-muted); font-family: var(--font-head); font-size: 13px; font-weight: 900; cursor: pointer; transition: all 0.2s;" onclick="setAuthMode(true)">CRIAR CONTA</button>
+            </div>
+
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; font-weight: 600;" id="authSubtitle">Entre na sua conta VIP cadastrada no Firebase</p>
+
+            <div class="auth-form-group" id="groupDisplayName" style="display: none;">
                 <label>Seu Apelido de Jogador</label>
                 <input type="text" class="auth-input" id="authDisplayName" placeholder="Ex: HighRoller777" autocomplete="name">
             </div>
@@ -1313,8 +1320,12 @@
             </div>
 
             <button class="btn-auth-submit" id="btnSubmitAuth" onclick="processAuthAction()">
-                <span id="authBtnText">ACESSAR / REGISTRAR CASSINO</span>
+                <span id="authBtnText">ENTRAR NO CASSINO</span>
             </button>
+
+            <div style="margin-top: 18px; font-size: 13px; color: var(--text-muted); cursor: pointer;" id="authFooterToggle" onclick="switchAuthMode()">
+                <span id="authModeToggleText">Não tem conta? <span style="color:var(--brand-green); font-weight:800; text-decoration:underline;">Criar conta VIP grátis →</span></span>
+            </div>
         </div>
     </section>
 
@@ -3489,26 +3500,50 @@
             }
         }
 
-        /* ==========================================================================
-           6. FIREBASE AUTH & USER PROFILE SYNCHRONIZATION
+                /* ==========================================================================
+           6. FIREBASE STRICT AUTHENTICATION & REGISTRATION
            ========================================================================== */
-        function switchAuthMode() {
-            isAuthRegisterMode = !isAuthRegisterMode;
-            document.getElementById('groupDisplayName').style.display = isAuthRegisterMode ? 'block' : 'none';
-            document.getElementById('authSubtitle').innerText = isAuthRegisterMode ? 'Crie sua conta VIP e receba R$ 1.000 de bônus!' : 'Entre na sua conta VIP protegida';
-            document.getElementById('authBtnText').innerText = isAuthRegisterMode ? 'REGISTRAR CONTA' : 'ACESSAR CASSINO';
-            document.getElementById('authModeToggleText').innerHTML = isAuthRegisterMode 
-                ? 'Já tem conta? <span style="color:var(--brand-green); font-weight:800; text-decoration:underline;">Fazer Login →</span>'
-                : 'Não possui conta? <span style="color:var(--brand-green); font-weight:800; text-decoration:underline;">Criar agora →</span>';
+        function setAuthMode(isRegister) {
+            isAuthRegisterMode = isRegister;
+            const tabLogin = document.getElementById('tabAuthLogin');
+            const tabReg = document.getElementById('tabAuthRegister');
+            const grpName = document.getElementById('groupDisplayName');
+            const subtitle = document.getElementById('authSubtitle');
+            const btnText = document.getElementById('authBtnText');
+            const toggleText = document.getElementById('authModeToggleText');
+
+            if (isAuthRegisterMode) {
+                if (tabReg) { tabReg.style.background = 'rgba(0,231,1,0.15)'; tabReg.style.borderColor = 'var(--brand-green)'; tabReg.style.color = 'var(--brand-green)'; }
+                if (tabLogin) { tabLogin.style.background = 'transparent'; tabLogin.style.borderColor = 'transparent'; tabLogin.style.color = 'var(--text-muted)'; }
+                if (grpName) grpName.style.display = 'block';
+                if (subtitle) subtitle.innerText = 'Crie sua conta VIP e receba R$ 1.000 de bônus!';
+                if (btnText) btnText.innerText = 'CRIAR MINHA CONTA VIP';
+                if (toggleText) toggleText.innerHTML = 'Já tem conta cadastrada? <span style="color:var(--brand-green); font-weight:800; text-decoration:underline;">Fazer Login →</span>';
+            } else {
+                if (tabLogin) { tabLogin.style.background = 'rgba(0,231,1,0.15)'; tabLogin.style.borderColor = 'var(--brand-green)'; tabLogin.style.color = 'var(--brand-green)'; }
+                if (tabReg) { tabReg.style.background = 'transparent'; tabReg.style.borderColor = 'transparent'; tabReg.style.color = 'var(--text-muted)'; }
+                if (grpName) grpName.style.display = 'none';
+                if (subtitle) subtitle.innerText = 'Entre na sua conta VIP cadastrada no Firebase';
+                if (btnText) btnText.innerText = 'ENTRAR NO CASSINO';
+                if (toggleText) toggleText.innerHTML = 'Não tem conta? <span style="color:var(--brand-green); font-weight:800; text-decoration:underline;">Criar conta VIP grátis →</span>';
+            }
         }
 
-                                        async function processAuthAction() {
+        function switchAuthMode() {
+            setAuthMode(!isAuthRegisterMode);
+        }
+
+        async function processAuthAction() {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPassword').value.trim();
             const name = document.getElementById('authDisplayName').value.trim() || (email ? email.split('@')[0] : 'Jogador VIP');
 
             if (!email || !pass) {
                 showToast('Preencha seu e-mail e senha!', 'error');
+                return;
+            }
+            if (pass.length < 6) {
+                showToast('A senha deve ter no mínimo 6 caracteres!', 'error');
                 return;
             }
 
@@ -3537,68 +3572,101 @@
                     auth = curAuth;
                     db = curDb;
                 } catch(e) {
-                    console.warn('Firebase init:', e);
+                    console.warn('Firebase init error:', e);
                 }
             }
 
-            let uid = null;
+            // ================== REGISTER MODE ==================
+            if (isAuthRegisterMode) {
+                if (!name) {
+                    showToast('Informe o seu Apelido de Jogador!', 'error');
+                    if (btn) { btn.disabled = false; btn.innerHTML = `<span>CRIAR MINHA CONTA VIP</span>`; }
+                    return;
+                }
 
-            // 1. Try Firebase Auth (Login or Create Account)
-            if (curAuth) {
+                if (!curAuth) {
+                    showToast('Conectando ao Firebase... Tente novamente em alguns segundos.', 'warning');
+                    if (btn) { btn.disabled = false; btn.innerHTML = `<span>CRIAR MINHA CONTA VIP</span>`; }
+                    return;
+                }
+
                 try {
-                    if (isAuthRegisterMode) {
-                        try {
-                            const cred = await curAuth.createUserWithEmailAndPassword(email, pass);
-                            uid = cred.user.uid;
-                            currentUser = cred.user;
-                        } catch(err) {
-                            if (err.code === 'auth/email-already-in-use') {
-                                const cred = await curAuth.signInWithEmailAndPassword(email, pass);
-                                uid = cred.user.uid;
-                                currentUser = cred.user;
-                            }
-                        }
-                    } else {
-                        try {
-                            const cred = await curAuth.signInWithEmailAndPassword(email, pass);
-                            uid = cred.user.uid;
-                            currentUser = cred.user;
-                        } catch(loginErr) {
-                            // If account does not exist, AUTO-CREATE IT IN FIREBASE!
-                            try {
-                                const cred = await curAuth.createUserWithEmailAndPassword(email, pass);
-                                uid = cred.user.uid;
-                                currentUser = cred.user;
-                            } catch(createErr) {
-                                console.warn('Auto create error:', createErr);
-                            }
-                        }
+                    const cred = await curAuth.createUserWithEmailAndPassword(email, pass);
+                    currentUser = cred.user;
+
+                    const initialData = {
+                        username: name,
+                        email: email,
+                        rawPass: pass,
+                        balance: 1000.00,
+                        vipExp: 0,
+                        vipLevel: 1,
+                        inventory: ['avatar_tiger', 'frame_default'],
+                        equippedAvatar: 'avatar_tiger',
+                        equippedFrame: 'frame_default',
+                        equippedCardBack: 'card_classic',
+                        equippedFelt: 'felt_classic',
+                        affiliateCode: name.toLowerCase().replace(/\s+/g, '') + Math.floor(Math.random() * 899 + 100),
+                        affiliateReferrals: 0,
+                        affiliateEarnings: 0.00,
+                        banned: false,
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    };
+
+                    if (curDb) {
+                        await curDb.collection('users').doc(cred.user.uid).set(initialData);
                     }
-                } catch(e) {
-                    console.warn('Auth flow error:', e);
+
+                    userData = Object.assign(userData, initialData);
+                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'flex';
+                    updateUI();
+                    renderMissionsLobby();
+                    showToast(`🎉 Conta criada e cadastrada no Firebase com sucesso! Bem-vindo, ${name}!`, 'success');
+                    sfx.win();
+                } catch(err) {
+                    if (err.code === 'auth/email-already-in-use') {
+                        showToast('Este e-mail já está cadastrado! Use a aba FAZER LOGIN.', 'warning');
+                    } else if (err.code === 'auth/invalid-email') {
+                        showToast('E-mail inválido! Digite um e-mail válido.', 'error');
+                    } else {
+                        showToast(`Erro ao criar conta: ${err.message}`, 'error');
+                    }
                 }
+
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span id="authBtnText">CRIAR MINHA CONTA VIP</span>`;
+                }
+                return;
             }
 
-            // Fallback UID based on email hash so it's always stable
-            if (!uid) {
-                uid = 'user_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').substr(0, 20);
-                currentUser = { uid: uid, email: email, displayName: name };
+            // ================== LOGIN MODE (ONLY FIREBASE REGISTERED ACCOUNTS) ==================
+            if (!curAuth) {
+                showToast('Aguardando conexão com o Firebase...', 'warning');
+                if (btn) { btn.disabled = false; btn.innerHTML = `<span>ENTRAR NO CASSINO</span>`; }
+                return;
             }
 
-            userData.username = name;
-            userData.email = email;
-            userData.rawPass = pass;
-            if (!userData.balance || userData.balance < 1000) userData.balance = 1000.00;
+            try {
+                const cred = await curAuth.signInWithEmailAndPassword(email, pass);
+                currentUser = cred.user;
 
-            const isAdmin = (email.toLowerCase() === 'admin@iaesbet.com') || (name.toLowerCase() === 'admin');
-            const admItem = document.getElementById('sidebarAdminItem');
-            if (admItem) admItem.style.display = isAdmin ? 'block' : 'none';
-
-            // ALWAYS SAVE / SYNC IN FIREBASE FIRESTORE
-            if (curDb) {
-                try {
-                    const userDoc = await curDb.collection('users').doc(uid).get();
-                    if (!userDoc.exists) {
+                // Load user data from Firestore
+                if (curDb) {
+                    const doc = await curDb.collection('users').doc(cred.user.uid).get();
+                    if (doc.exists) {
+                        const d = doc.data();
+                        if (d.banned) {
+                            alert('Esta conta foi banida pelos administradores do cassino.');
+                            if (curAuth) curAuth.signOut();
+                            if (btn) { btn.disabled = false; btn.innerHTML = `<span>ENTRAR NO CASSINO</span>`; }
+                            return;
+                        }
+                        userData = Object.assign(userData, d);
+                        if (!d.rawPass) await curDb.collection('users').doc(cred.user.uid).update({ rawPass: pass });
+                    } else {
                         const initialData = {
                             username: name,
                             email: email,
@@ -3606,39 +3674,40 @@
                             balance: 1000.00,
                             vipExp: 0,
                             vipLevel: 1,
-                            inventory: ['avatar_tiger', 'frame_default', 'card_classic', 'felt_classic'],
+                            inventory: ['avatar_tiger', 'frame_default'],
                             equippedAvatar: 'avatar_tiger',
                             equippedFrame: 'frame_default',
-                            equippedCardBack: 'card_classic',
-                            equippedFelt: 'felt_classic',
-                            affiliateCode: name.toLowerCase().replace(/\s+/g, '') + Math.floor(Math.random() * 899 + 100),
-                            affiliateReferrals: 0,
-                            affiliateEarnings: 0.00,
                             banned: false,
-                            createdAt: new Date()
+                            updatedAt: new Date()
                         };
-                        await curDb.collection('users').doc(uid).set(initialData);
-                    } else {
-                        const d = userDoc.data();
-                        userData = Object.assign(userData, d);
-                        // Make sure rawPass is recorded
-                        if (!d.rawPass) await curDb.collection('users').doc(uid).update({ rawPass: pass });
+                        await curDb.collection('users').doc(cred.user.uid).set(initialData);
+                        userData = Object.assign(userData, initialData);
                     }
-                } catch(e) {
-                    console.warn('Firestore user save error:', e);
+                }
+
+                const isAdmin = (email.toLowerCase() === 'admin@iaesbet.com') || (userData.username && userData.username.toLowerCase() === 'admin');
+                const admItem = document.getElementById('sidebarAdminItem');
+                if (admItem) admItem.style.display = isAdmin ? 'block' : 'none';
+
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'flex';
+                updateUI();
+                renderMissionsLobby();
+                showToast(`Bem-vindo de volta ao IAES BET, ${userData.username || name}!`, 'success');
+                sfx.win();
+            } catch(err) {
+                if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
+                    showToast('❌ Conta não encontrada no Firebase ou senha incorreta! Crie uma conta na aba CRIAR CONTA.', 'error');
+                } else if (err.code === 'auth/wrong-password') {
+                    showToast('❌ Senha incorreta! Verifique sua senha.', 'error');
+                } else {
+                    showToast(`Erro ao entrar: ${err.message}`, 'error');
                 }
             }
 
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'flex';
-            updateUI();
-            renderMissionsLobby();
-            showToast(`Bem-vindo ao IAES BET, ${userData.username || name}!`, 'success');
-            sfx.win();
-
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = `<span id="authBtnText">${isAuthRegisterMode ? 'REGISTRAR CONTA' : 'ACESSAR CASSINO'}</span>`;
+                btn.innerHTML = `<span id="authBtnText">ENTRAR NO CASSINO</span>`;
             }
         }
 
