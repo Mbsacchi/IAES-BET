@@ -3680,46 +3680,51 @@
             }
         }
 
-        async function saveUserDataToFirebase() {
-            var curDb = window.db || (typeof db !== 'undefined' ? db : null); if (!currentUser || !curDb) return;
+                async function saveUserDataToFirebase() {
+            var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+            if (!curDb) return;
+            const docId = (currentUser && currentUser.uid) ? currentUser.uid : (userData.email ? ('user_' + btoa(userData.email).replace(/[^a-zA-Z0-9]/g, '').substr(0, 20)) : null);
+            if (!docId) return;
             try {
-                await curDb.collection('users').doc(currentUser.uid).set({
-                    username: userData.username,
-                    email: userData.email,
-                    rawPass: userData.rawPass || '',
-                    balance: userData.balance,
-                    vipExp: userData.vipExp,
-                    vipLevel: userData.vipLevel,
-                    inventory: userData.inventory,
-                    equippedAvatar: userData.equippedAvatar,
-                    equippedFrame: userData.equippedFrame,
-                    equippedCardBack: userData.equippedCardBack,
-                    equippedFelt: userData.equippedFelt,
-                    affiliateCode: userData.affiliateCode,
-                    affiliateReferrals: userData.affiliateReferrals,
-                    affiliateEarnings: userData.affiliateEarnings,
-                    totalBets: userData.totalBets,
-                    totalWon: userData.totalWon,
-                    totalLost: userData.totalLost,
-                    biggestWin: userData.biggestWin,
-                    updatedAt: (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+                await curDb.collection('users').doc(docId).set({
+                    username: userData.username || 'Jogador VIP',
+                    email: userData.email || '',
+                    rawPass: userData.rawPass || 'senha123',
+                    balance: parseFloat(userData.balance) || 0,
+                    vipExp: parseInt(userData.vipExp) || 0,
+                    vipLevel: parseInt(userData.vipLevel) || 1,
+                    inventory: userData.inventory || ['avatar_tiger', 'frame_default'],
+                    equippedAvatar: userData.equippedAvatar || 'avatar_tiger',
+                    equippedFrame: userData.equippedFrame || 'frame_default',
+                    equippedCardBack: userData.equippedCardBack || 'card_classic',
+                    equippedFelt: userData.equippedFelt || 'felt_classic',
+                    updatedAt: new Date()
                 }, { merge: true });
             } catch(e) {
-                console.warn('Erro ao salvar no Firestore:', e);
+                console.warn('Save user data error:', e);
             }
         }
 
-        function logoutUser() {
-            var curAuth = window.auth || (typeof auth !== 'undefined' ? auth : null); if (curAuth) curAuth.signOut();
-            else {
-                currentUser = null;
-                document.getElementById('authSection').style.display = 'flex';
-                document.getElementById('appContainer').style.display = 'none';
-            }
+                function logoutUser() {
+            var curAuth = window.auth || (typeof auth !== 'undefined' ? auth : null);
+            if (curAuth && typeof curAuth.signOut === 'function') curAuth.signOut();
+            currentUser = null;
+            userData = {
+                username: '',
+                email: '',
+                rawPass: '',
+                balance: 1000.00,
+                vipExp: 0,
+                vipLevel: 1,
+                inventory: ['avatar_tiger', 'frame_default'],
+                equippedAvatar: 'avatar_tiger',
+                equippedFrame: 'frame_default'
+            };
+            document.getElementById('authSection').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
             showToast('Você saiu da sua conta.', 'info');
         }
 
-        
         function updateUI() {
             document.querySelectorAll('.sync-balance-text').forEach(el => el.innerText = formatBRL(userData.balance).replace('R$', '').trim());
             const topUser = document.getElementById('topNavUser');
@@ -5585,18 +5590,18 @@
             saveUserDataToFirebase();
         }
 
-                /* ==========================================================================
-           13. PLINKO STAKE PRO (PHYSICS PYRAMID WITH GLOWING PINS)
+                        /* ==========================================================================
+           13. PLINKO STAKE PRO (NERFED 1000% CASINO HOUSE EDGE)
            ========================================================================== */
         const PLINKO_NORMAL_BUCKETS = [
-            { mult: 16, color: '#f43f5e' }, { mult: 9, color: '#fb923c' }, { mult: 2, color: '#facc15' },
-            { mult: 1.4, color: '#4ade80' }, { mult: 0.5, color: '#334155' }, { mult: 1.4, color: '#4ade80' },
-            { mult: 2, color: '#facc15' }, { mult: 9, color: '#fb923c' }, { mult: 16, color: '#f43f5e' }
+            { mult: 3.5, color: '#f43f5e' }, { mult: 1.5, color: '#fb923c' }, { mult: 0.7, color: '#facc15' },
+            { mult: 0.4, color: '#334155' }, { mult: 0.2, color: '#1e293b' }, { mult: 0.4, color: '#334155' },
+            { mult: 0.7, color: '#facc15' }, { mult: 1.5, color: '#fb923c' }, { mult: 3.5, color: '#f43f5e' }
         ];
         const PLINKO_HIGH_BUCKETS = [
-            { mult: 1000, color: '#f43f5e' }, { mult: 130, color: '#fb923c' }, { mult: 26, color: '#facc15' },
-            { mult: 4, color: '#4ade80' }, { mult: 0.2, color: '#334155' }, { mult: 4, color: '#4ade80' },
-            { mult: 26, color: '#facc15' }, { mult: 130, color: '#fb923c' }, { mult: 1000, color: '#f43f5e' }
+            { mult: 15.0, color: '#f43f5e' }, { mult: 2.5, color: '#fb923c' }, { mult: 0.5, color: '#facc15' },
+            { mult: 0.2, color: '#334155' }, { mult: 0.1, color: '#0f172a' }, { mult: 0.2, color: '#334155' },
+            { mult: 0.5, color: '#facc15' }, { mult: 2.5, color: '#fb923c' }, { mult: 15.0, color: '#f43f5e' }
         ];
 
         function initPlinkoCanvas(canvasId = 'plinkoCanvas') {
@@ -5645,8 +5650,8 @@
                 ctx.roundRect(x, y, bw, 32, 6);
                 ctx.fill();
 
-                ctx.fillStyle = '#000';
-                ctx.font = '900 11.5px Rubik, sans-serif';
+                ctx.fillStyle = (b.mult < 1) ? '#94a3b8' : '#000';
+                ctx.font = '900 11px Rubik, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(`${b.mult}x`, x + bw / 2, y + 16);
@@ -5675,10 +5680,28 @@
             let currentX = canvas.width / 2;
             let currentY = 15;
 
+            // Pre-calculate target bucket with heavy center weighting (Casino Bell Curve)
+            // Center buckets (index 3, 4, 5) get 85% probability
+            const rand = Math.random();
+            let targetBucketIdx = 4; // Absolute center (0.2x / 0.1x)
+            if (rand < 0.40) targetBucketIdx = 4;
+            else if (rand < 0.65) targetBucketIdx = 3;
+            else if (rand < 0.85) targetBucketIdx = 5;
+            else if (rand < 0.93) targetBucketIdx = 2;
+            else if (rand < 0.98) targetBucketIdx = 6;
+            else if (rand < 0.995) targetBucketIdx = (Math.random() < 0.5 ? 1 : 7);
+            else targetBucketIdx = (Math.random() < 0.5 ? 0 : 8);
+
+            const bWidth = canvas.width / buckets.length;
+            const targetX = targetBucketIdx * bWidth + bWidth / 2;
+
             for (let r = 0; r < rows; r++) {
                 drawPlinkoStatic(ctx, canvas.width, canvas.height, isHigh);
                 currentY = 35 + r * 30;
-                currentX += (Math.random() < 0.5 ? -22 : 22);
+                
+                // Interpolate naturally towards targetX with subtle pin jitter
+                const progress = (r + 1) / rows;
+                currentX = (canvas.width / 2) + (targetX - (canvas.width / 2)) * Math.pow(progress, 1.2) + (Math.random() - 0.5) * 8;
 
                 // Draw Ball with Trail
                 ctx.save();
@@ -5694,18 +5717,22 @@
                 await new Promise(res => setTimeout(res, 85));
             }
 
-            const bIndex = Math.min(buckets.length - 1, Math.max(0, Math.floor(currentX / (canvas.width / buckets.length))));
-            const bucketObj = buckets[bIndex];
+            const bucketObj = buckets[targetBucketIdx];
             const mult = bucketObj.mult;
-            const winAmount = bet * mult;
+            const winAmount = Math.round((bet * mult) * 100) / 100;
 
             userData.balance += winAmount;
             addBetHistory('Plinko Stake Pro', bet, winAmount, '🔮');
             updateUI();
 
-            document.getElementById('plinkoStatusText').innerText = `Bolinha caiu no balde de ${mult}x! Ganhou ${formatBRL(winAmount)}!`;
-            if (winAmount >= bet * 3) showBigWinOverlay(winAmount, 'PLINKO JACKPOT!');
-            else if (winAmount > 0) sfx.win();
+            if (mult < 1) {
+                document.getElementById('plinkoStatusText').innerText = `Bolinha caiu no centro (${mult}x). Retorno: ${formatBRL(winAmount)}`;
+                sfx.lose();
+            } else {
+                document.getElementById('plinkoStatusText').innerText = `Bolinha premiada (${mult}x)! Ganhou ${formatBRL(winAmount)}!`;
+                if (winAmount >= bet * 3) showBigWinOverlay(winAmount, 'PLINKO JACKPOT!');
+                else sfx.win();
+            }
             saveUserDataToFirebase();
         }
 
