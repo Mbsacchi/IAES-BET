@@ -5086,33 +5086,32 @@
             else spinGenericSlot(gameKey);
         }
 
-        async function startFreeSpinsSession(gameKey, bet, spinsCount = 10) {
+                async function startFreeSpinsSession(gameKey, bet, spinsCount = 10) {
             if (freeSpinsActive[gameKey]) return;
             freeSpinsActive[gameKey] = true;
 
-            showBigWinOverlay(0, `🎉 ${spinsCount} RODADAS GRÁTIS!`);
-            sfx.bigWin();
+            showToast(`⭐ INICIANDO ${spinsCount} RODADAS GRÁTIS AUTOMÁTICAS!`, 'gold');
+            sfx.spin();
             triggerConfetti();
-            await new Promise(r => setTimeout(r, 2200));
 
             let totalBonusWin = 0;
             for (let round = 1; round <= spinsCount; round++) {
-                showToast(`🎰 Rodada Grátis ${round}/${spinsCount}...`, 'gold');
+                showToast(`🎰 Rodada Grátis ${round} de ${spinsCount} em andamento...`, 'gold');
                 
                 let roundWin = 0;
-                if (gameKey === 'bonanza') roundWin = await executeBonanzaSpin(bet, true);
-                else if (gameKey === 'zeus') roundWin = await executeZeusSpin(bet, true);
-                else if (gameKey === 'tiger') roundWin = await executeTigerSpin(bet, true);
-                else if (gameKey === 'slot') roundWin = await executeNinjaSpin(bet, true);
-                else roundWin = await executeGenericSlotSpin(gameKey, bet, true);
+                if (gameKey === 'bonanza') roundWin = await executeBonanzaSpin(bet, true, round, spinsCount, totalBonusWin);
+                else if (gameKey === 'zeus') roundWin = await executeZeusSpin(bet, true, round, spinsCount, totalBonusWin);
+                else if (gameKey === 'tiger') roundWin = await executeTigerSpin(bet, true, round, spinsCount, totalBonusWin);
+                else if (gameKey === 'slot') roundWin = await executeNinjaSpin(bet, true, round, spinsCount, totalBonusWin);
+                else roundWin = await executeGenericSlotSpin(gameKey, bet, true, round, spinsCount, totalBonusWin);
 
                 totalBonusWin += roundWin;
-                await new Promise(r => setTimeout(r, slotTurboState[gameKey] ? 500 : 1100));
+                await new Promise(r => setTimeout(r, slotTurboState[gameKey] ? 450 : 850));
             }
 
             freeSpinsActive[gameKey] = false;
             userData.balance += totalBonusWin;
-            addBetHistory(`${gameKey.toUpperCase()} 10 Rodadas Grátis`, bet, totalBonusWin, '⭐');
+            addBetHistory(`${gameKey.toUpperCase()} 10 Free Spins`, bet, totalBonusWin, '⭐');
             updateUI();
             saveUserDataToFirebase();
 
@@ -5172,17 +5171,17 @@
             }
         }
 
-        async function executeBonanzaSpin(bet, isFree = false) {
+                async function executeBonanzaSpin(bet, isFree = false, round = 1, totalRounds = 10, accumulated = 0) {
             const isTurbo = slotTurboState['bonanza'] || false;
             const statusEl = document.getElementById('bonanzaStatusText');
-            if (statusEl) statusEl.innerText = isFree ? '⭐ RODADA GRÁTIS EM ANDAMENTO...' : 'Chuva de doces caindo...';
+            if (statusEl) statusEl.innerText = isFree ? `⭐ RODADA GRÁTIS ${round}/${totalRounds} | ACUMULADO: ${formatBRL(accumulated)}` : 'Chuva de doces caindo...';
             const comboEl = document.getElementById('bonanzaComboDisp');
             if (comboEl) comboEl.innerText = '1x';
 
             const symbols = [];
             for (let i = 0; i < 30; i++) {
-                const isBomb = Math.random() < (isFree ? 0.25 : 0.05);
-                const isScatter = Math.random() < 0.002; // Very rare natural scatter 0.2%
+                const isBomb = Math.random() < (isFree ? 0.30 : 0.05);
+                const isScatter = Math.random() < 0.002;
                 let sym;
                 if (isBomb) sym = '💣';
                 else if (isScatter) sym = '⭐';
@@ -5226,21 +5225,19 @@
                 }
             }
 
-            if (counts['⭐'] >= 4) {
+            if (counts['⭐'] >= 4 && !isFree) {
                 winMultiplier += 15;
-                if (!isFree) {
-                    showToast('🍬 4 DOCES DOURADOS! 10 RODADAS GRÁTIS DESBLOQUEADAS!', 'gold');
-                    setTimeout(() => startFreeSpinsSession('bonanza', bet, 10), 1000);
-                }
+                showToast('🍬 4 DOCES DOURADOS! 10 RODADAS GRÁTIS DESBLOQUEADAS!', 'gold');
+                setTimeout(() => startFreeSpinsSession('bonanza', bet, 10), 800);
             }
 
             if (winMultiplier > 0) {
                 const totalWin = bet * winMultiplier * bombMultiplier;
-                if (statusEl) statusEl.innerText = `GANHOU ${formatBRL(totalWin)}! (${(winMultiplier * bombMultiplier).toFixed(1)}x)`;
+                if (statusEl) statusEl.innerText = isFree ? `⭐ GANHOU +${formatBRL(totalWin)} (${(winMultiplier * bombMultiplier).toFixed(1)}x)! Total: ${formatBRL(accumulated + totalWin)}` : `GANHOU ${formatBRL(totalWin)}! (${(winMultiplier * bombMultiplier).toFixed(1)}x)`;
                 sfx.win();
                 return totalWin;
             } else {
-                if (statusEl) statusEl.innerText = 'Sem combinações.';
+                if (statusEl) statusEl.innerText = isFree ? `⭐ Rodada ${round}/${totalRounds} sem combinação. Total: ${formatBRL(accumulated)}` : 'Sem combinações.';
                 return 0;
             }
         }
@@ -5291,10 +5288,10 @@
             }
         }
 
-        async function executeZeusSpin(bet, isFree = false) {
+                async function executeZeusSpin(bet, isFree = false, round = 1, totalRounds = 10, accumulated = 0) {
             const isTurbo = slotTurboState['zeus'] || false;
             const statusEl = document.getElementById('zeusStatusText');
-            if (statusEl) statusEl.innerText = isFree ? '⚡ ZEUS RODADA GRÁTIS...' : 'Zeus convocando raios...';
+            if (statusEl) statusEl.innerText = isFree ? `⚡ ZEUS GRÁTIS ${round}/${totalRounds} | ACUMULADO: ${formatBRL(accumulated)}` : 'Zeus convocando raios...';
             const multDisp = document.getElementById('zeusMultDisp');
             if (multDisp) multDisp.innerText = '1x';
 
@@ -5334,7 +5331,7 @@
             }
 
             let orbMult = 1;
-            if (Math.random() < (isFree ? 0.60 : 0.20)) {
+            if (Math.random() < (isFree ? 0.65 : 0.20)) {
                 const orbs = isFree ? [5, 10, 25, 50, 100, 250] : [2, 5, 10, 25, 50];
                 orbMult = orbs[Math.floor(Math.random() * orbs.length)];
                 if (multDisp) multDisp.innerText = `${orbMult}x`;
@@ -5343,17 +5340,17 @@
             }
 
             if (counts['⭐'] >= 4 && !isFree) {
-                showToast('⚡ 4 RAIS DOURADOS! 10 RODADAS GRÁTIS!', 'gold');
-                setTimeout(() => startFreeSpinsSession('zeus', bet, 10), 1000);
+                showToast('⚡ 4 RAIOS DOURADOS! 10 RODADAS GRÁTIS!', 'gold');
+                setTimeout(() => startFreeSpinsSession('zeus', bet, 10), 800);
             }
 
             if (winMultiplier > 0) {
                 const totalWin = bet * winMultiplier * orbMult;
-                if (statusEl) statusEl.innerText = `VITÓRIA DOS DEUSES: +${formatBRL(totalWin)}!`;
+                if (statusEl) statusEl.innerText = isFree ? `⚡ +${formatBRL(totalWin)}! Total: ${formatBRL(accumulated + totalWin)}` : `VITÓRIA DOS DEUSES: +${formatBRL(totalWin)}!`;
                 sfx.win();
                 return totalWin;
             } else {
-                if (statusEl) statusEl.innerText = 'Sem vitórias divinas.';
+                if (statusEl) statusEl.innerText = isFree ? `⚡ Rodada ${round}/${totalRounds} sem vitória. Total: ${formatBRL(accumulated)}` : 'Sem vitórias divinas.';
                 return 0;
             }
         }
@@ -5404,10 +5401,10 @@
             }
         }
 
-        async function executeTigerSpin(bet, isFree = false) {
+                async function executeTigerSpin(bet, isFree = false, round = 1, totalRounds = 10, accumulated = 0) {
             const isTurbo = slotTurboState['tiger'] || false;
             const statusEl = document.getElementById('tigerStatusText');
-            if (statusEl) statusEl.innerText = isFree ? '🐯 TIGRE RODADA GRÁTIS...' : 'O Tigre está girando...';
+            if (statusEl) statusEl.innerText = isFree ? `🐯 TIGRE GRÁTIS ${round}/${totalRounds} | ACUMULADO: ${formatBRL(accumulated)}` : 'O Tigre está girando...';
 
             const symbols = [];
             for (let i = 0; i < 9; i++) {
@@ -5447,11 +5444,11 @@
 
             if (winMult > 0) {
                 const totalWin = bet * winMult;
-                if (statusEl) statusEl.innerText = `O TIGRE SOLTOU A CARTA! +${formatBRL(totalWin)}`;
+                if (statusEl) statusEl.innerText = isFree ? `🐯 CARTA DO TIGRE: +${formatBRL(totalWin)}! Total: ${formatBRL(accumulated + totalWin)}` : `O TIGRE SOLTOU A CARTA! +${formatBRL(totalWin)}`;
                 sfx.win();
                 return totalWin;
             } else {
-                if (statusEl) statusEl.innerText = 'O Tigre aguarda o próximo giro!';
+                if (statusEl) statusEl.innerText = isFree ? `🐯 Rodada ${round}/${totalRounds} sem carta. Total: ${formatBRL(accumulated)}` : 'O Tigre aguarda o próximo giro!';
                 return 0;
             }
         }
@@ -5513,12 +5510,12 @@
             }
         }
 
-        async function executeGenericSlotSpin(themeKey, bet, isFree = false) {
+                async function executeGenericSlotSpin(themeKey, bet, isFree = false, round = 1, totalRounds = 10, accumulated = 0) {
             const t = SLOT_THEMES[themeKey];
             if (!t) return 0;
             const isTurbo = slotTurboState[themeKey] || false;
             const statusEl = document.getElementById(t.statusEl);
-            if (statusEl) statusEl.innerText = isFree ? `⭐ ${t.name} BÔNUS...` : 'Girando rolos...';
+            if (statusEl) statusEl.innerText = isFree ? `⭐ ${t.name} GRÁTIS ${round}/${totalRounds} | ACUMULADO: ${formatBRL(accumulated)}` : 'Girando rolos...';
 
             const symbols = [];
             for (let i = 0; i < t.count; i++) {
@@ -5537,7 +5534,6 @@
 
             await new Promise(r => setTimeout(r, isTurbo ? 180 : 450));
 
-            // Check line matching
             let winMult = 0;
             const step = t.count === 9 ? 3 : 5;
             for (let row = 0; row < t.count / step; row++) {
@@ -5550,11 +5546,11 @@
 
             if (winMult > 0) {
                 const totalWin = bet * winMult * (isFree ? 2 : 1);
-                if (statusEl) statusEl.innerText = `VITÓRIA: +${formatBRL(totalWin)}!`;
+                if (statusEl) statusEl.innerText = isFree ? `⭐ VITÓRIA: +${formatBRL(totalWin)}! Total: ${formatBRL(accumulated + totalWin)}` : `VITÓRIA: +${formatBRL(totalWin)}!`;
                 sfx.win();
                 return totalWin;
             } else {
-                if (statusEl) statusEl.innerText = 'Sem combinações.';
+                if (statusEl) statusEl.innerText = isFree ? `⭐ Rodada ${round}/${totalRounds}. Total: ${formatBRL(accumulated)}` : 'Sem combinações.';
                 return 0;
             }
         }
