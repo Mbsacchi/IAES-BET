@@ -1535,7 +1535,7 @@
                     <button class="hamburger-btn" onclick="toggleSidebar(true)">☰</button>
                     <div class="page-heading">
                         <h1 id="topNavHeading">Lobby de Jogos</h1>
-                        <p id="topNavSub">Jogador VIP: <span id="topNavUser">-</span></p>
+                        <p id="topNavSub" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"><span>Jogador: <strong id="topNavUser" style="color: #fff;">-</strong></span><button type="button" class="btn-spin-action" style="padding: 2px 8px; font-size: 10px; background: rgba(0,231,1,0.15); border: 1px solid var(--brand-green); color: var(--brand-green); cursor: pointer; border-radius: 4px;" onclick="changePlayerNickname()" title="Alterar seu Apelido">✏️ Trocar Nome</button></p>
                     </div>
                 </div>
 
@@ -3500,7 +3500,7 @@
             }
         }
 
-                        /* ==========================================================================
+                                /* ==========================================================================
            6. FIREBASE STRICT AUTHENTICATION & REGISTRATION
            ========================================================================== */
         function setAuthMode(isRegister) {
@@ -3533,10 +3533,38 @@
             setAuthMode(!isAuthRegisterMode);
         }
 
+        async function changePlayerNickname() {
+            const current = userData.username || (userData.email ? userData.email.split('@')[0] : 'Jogador');
+            const newName = prompt("Digite seu novo Apelido de Jogador:", current);
+            if (!newName || !newName.trim()) return;
+            userData.username = newName.trim();
+            updateUI();
+            await saveUserDataToFirebase();
+            showToast(`✅ Apelido alterado para "${userData.username}"!`, 'success');
+            sfx.coin();
+        }
+
+        async function adminRenameUser(uid, currentName) {
+            const newName = prompt("Digite o novo nome para este jogador:", currentName || '');
+            if (!newName || !newName.trim()) return;
+            var curDb = window.db || (typeof db !== 'undefined' ? db : null);
+            if (curDb && uid) {
+                await curDb.collection('users').doc(uid).set({ username: newName.trim() }, { merge: true });
+            }
+            if (currentUser && currentUser.uid === uid) {
+                userData.username = newName.trim();
+                updateUI();
+            }
+            showToast('Nome do jogador atualizado com sucesso!', 'success');
+            renderAdminData();
+        }
+
         async function processAuthAction() {
             const email = document.getElementById('authEmail').value.trim();
             const pass = document.getElementById('authPassword').value.trim();
-            const name = document.getElementById('authDisplayName').value.trim() || (email ? email.split('@')[0] : 'Jogador VIP');
+            const emailPrefix = email ? email.split('@')[0] : 'Jogador';
+            const typedName = document.getElementById('authDisplayName').value.trim();
+            const name = typedName || emailPrefix;
 
             if (!email || !pass) {
                 showToast('Preencha seu e-mail e senha!', 'error');
@@ -3584,12 +3612,6 @@
 
             // ================== REGISTER MODE ==================
             if (isAuthRegisterMode) {
-                if (!name) {
-                    showToast('Informe o seu Apelido de Jogador!', 'error');
-                    if (btn) { btn.disabled = false; btn.innerHTML = `<span>CRIAR MINHA CONTA VIP</span>`; }
-                    return;
-                }
-
                 try {
                     const cred = await curAuth.createUserWithEmailAndPassword(email, pass);
                     currentUser = cred.user;
@@ -3623,11 +3645,10 @@
                     document.getElementById('appContainer').style.display = 'flex';
                     updateUI();
                     renderMissionsLobby();
-                    showToast(`🎉 Conta criada e salva no Firebase Firestore! Bem-vindo, ${name}!`, 'success');
+                    showToast(`🎉 Conta criada e cadastrada no Firebase! Bem-vindo, ${name}!`, 'success');
                     sfx.win();
                 } catch(err) {
                     if (err.code === 'auth/email-already-in-use') {
-                        // Attempt automatic sync if password matches
                         try {
                             const cred = await curAuth.signInWithEmailAndPassword(email, pass);
                             currentUser = cred.user;
@@ -3652,7 +3673,7 @@
                             document.getElementById('appContainer').style.display = 'flex';
                             updateUI();
                             renderMissionsLobby();
-                            showToast(`🎉 Conta recuperada e sincronizada no Firebase Firestore! Bem-vindo, ${name}!`, 'success');
+                            showToast(`🎉 Conta vinculada e sincronizada no Firebase! Bem-vindo, ${name}!`, 'success');
                             sfx.win();
                             return;
                         } catch(loginErr) {
@@ -3688,11 +3709,20 @@
                             return;
                         }
                         userData = Object.assign(userData, d);
-                        await curDb.collection('users').doc(cred.user.uid).update({ rawPass: pass });
+                        
+                        // Fix username if default
+                        if (!userData.username || userData.username === 'Jogador VIP' || userData.username === 'undefined') {
+                            userData.username = emailPrefix;
+                        }
+                        userData.rawPass = pass;
+                        
+                        await curDb.collection('users').doc(cred.user.uid).set({
+                            rawPass: pass,
+                            username: userData.username
+                        }, { merge: true });
                     } else {
-                        // Re-create doc in Firestore if missing
                         const initialData = {
-                            username: name,
+                            username: emailPrefix,
                             email: email,
                             rawPass: pass,
                             balance: 1000.00,
@@ -3708,6 +3738,9 @@
                         await curDb.collection('users').doc(cred.user.uid).set(initialData, { merge: true });
                         userData = Object.assign(userData, initialData);
                     }
+                } else {
+                    userData.username = emailPrefix;
+                    userData.rawPass = pass;
                 }
 
                 const isAdmin = (email.toLowerCase() === 'admin@iaesbet.com') || (userData.username && userData.username.toLowerCase() === 'admin');
@@ -3718,7 +3751,7 @@
                 document.getElementById('appContainer').style.display = 'flex';
                 updateUI();
                 renderMissionsLobby();
-                showToast(`Bem-vindo de volta ao IAES BET, ${userData.username || name}!`, 'success');
+                showToast(`Bem-vindo de volta ao IAES BET, ${userData.username}!`, 'success');
                 sfx.win();
             } catch(err) {
                 if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
@@ -4200,15 +4233,21 @@
                     }
                 }
 
-                // Render Users Table
+                                // Render Users Table
                 tbody.innerHTML = '';
                 adminUsersList.forEach(u => {
                     const tr = document.createElement('tr');
                     tr.style.borderBottom = '1px solid var(--border)';
-                    const rawPass = u.rawPass || u.password || 'senha123';
-                    const displayName = u.displayName || u.username || (u.email ? u.email.split('@')[0] : 'Jogador VIP');
+                    const rawPass = u.rawPass || u.password || 'senha';
+                    let displayName = u.username || u.displayName || '';
+                    if (!displayName || displayName === 'Jogador VIP' || displayName === 'undefined') {
+                        displayName = (u.email ? u.email.split('@')[0] : 'Jogador');
+                    }
                     tr.innerHTML = `
-                        <td style="padding: 14px 18px; font-weight: 800; color: #fff;">${displayName}</td>
+                        <td style="padding: 14px 18px; font-weight: 800; color: #fff;">
+                            ${displayName}
+                            <button class="btn-spin-action" style="margin-left: 6px; padding: 2px 8px; font-size: 10px; background: rgba(0,231,1,0.15); border: 1px solid var(--brand-green); color: var(--brand-green);" onclick="adminRenameUser('${u.uid}', '${displayName}')" title="Renomear jogador">✏️</button>
+                        </td>
                         <td style="padding: 14px 18px; color: #94a3b8; font-size: 12.5px;">${u.email || u.uid}</td>
                         <td style="padding: 14px 18px;">
                             <span style="font-family: monospace; font-size: 14px; font-weight: 900; color: #facc15; background: #0c1527; padding: 6px 12px; border-radius: 6px; border: 1.5px solid #ca8a04; letter-spacing: 0.5px;">${rawPass}</span>
